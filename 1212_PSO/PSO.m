@@ -19,7 +19,7 @@ mesh(x1,x2,target);
 
 
 %% initialization
-swarm_size = 100;                       % number of the swarm particles
+swarm_size = 64;                       % number of the swarm particles
 maxIter = 100;                          % maximum number of iterations
 inertia = 1;                           % W
 correction_factor = 2.0;               % c1,c2
@@ -48,7 +48,7 @@ for i=1:maxIter
         for j=1:2375
             yHead(j)=(PP{j}(1)-swarm(i,1)).^2+(PP{j}(2)-swarm(i,2)).^2+10;
         end
-            error=sum((y(1:2375)-yHead)).^2/2375;
+            error=sum((y(1:2375)-yHead(1:2375))).^2/2375;
         if error<pbest(i)
             pbestPos(i,:)=swarm(i,:);
             pbest(i)=error;
@@ -56,7 +56,10 @@ for i=1:maxIter
                 gbest=i;
             end
         end
-        
+        for j=2376:2500
+            yHead(j)=(PP{j}(1)-swarm(i,1)).^2+(PP{j}(2)-swarm(i,2)).^2+10;
+        end
+            errorTest=sum((y(2376:2500)-yHead(2376:2500))).^2/125;
     end
     
     
