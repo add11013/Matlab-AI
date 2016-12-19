@@ -71,6 +71,7 @@ for ite=1:maxIter
            e(j)=(y(j+2)-yHead(j))^2;
         end
         mse=sum(e)/98;
+        plotmse(ite)=sum(e)/98;
         %pbest
         if mse<pbest(i)
             swarmPbest(i,:)=swarm(i,:);
@@ -95,6 +96,8 @@ end
 %% result
 x=linspace(-2,2,98);
 plot(x,yHead);
+figure(2)
+plot(1:maxIter,plotmse);
 
 
 
