@@ -19,7 +19,7 @@ end
 %% initialization
 swarm_size = 64;                       % number of the swarm particles
 maxIter = 100;                         % maximum number of iterations
-inertia = 1;                           % W
+inertia = 1.2;                           % W
 correction_factor = 2.0;               % c1,c2
 velocity(1:swarm_size,1:20) = 0;       % set initial velocity for particles
 pbest(1:swarm_size) = 1000;            % pbest distance
@@ -27,23 +27,23 @@ gbest=1;
 gbestDistance=1000;
 s=0;
 for i=1:swarm_size
-    swarm(i,1)=ca{1}(1);
-    swarm(i,2)=ca{1}(2);
+    swarm(i,1)=rand(1)*5;
+    swarm(i,2)=rand(1)*10;
     swarm(i,3)=a0(1);
     swarm(i,4)=a1(1);
     swarm(i,5)=a2(1);
-    swarm(i,6)=ca{1}(1);
-    swarm(i,7)=ca{1}(1);
+    swarm(i,6)=rand(1)*10;
+    swarm(i,7)=rand(1)*10;
     swarm(i,8)=a0(2);
     swarm(i,9)=a1(2);
     swarm(i,10)=a2(2);
-    swarm(i,11)=ca{1}(1);
-    swarm(i,12)=ca{1}(1);
+    swarm(i,11)=rand(1)*5;
+    swarm(i,12)=rand(1)*10;
     swarm(i,13)=a0(3);
     swarm(i,14)=a1(3);
     swarm(i,15)=a2(3);
-    swarm(i,16)=ca{1}(1);
-    swarm(i,17)=ca{1}(1);
+    swarm(i,16)=rand(1)*10;
+    swarm(i,17)=rand(1)*10;
     swarm(i,18)=a0(4);
     swarm(i,19)=a1(4);
     swarm(i,20)=a2(4);
@@ -53,18 +53,19 @@ end
 %% main loop
 for ite=1:maxIter
     for k=1:swarm_size
+        
         %move
         swarm(k,:)=velocity(k,:)+swarm(k,:);
         yHead=0;
         for i=1:98
             for j=1:4
-                B(j)=gaussmf(y(i),ca{j})*gaussmf(y(i+1),ca{j});
-                R(j)=B(j)*a0(j)+a1(j)*y(i)+a2(j)*y(i+1);
+                Beta(j)=gaussmf(y(i),ca{j})*gaussmf(y(i+1),ca{j});
+                R(j)=Beta(j)*(a0(j)+a1(j)*y(i)+a2(j)*y(i+1));
             end
             for j=1:4
-                yHead=B(j)*R(j)+yHead;
+                yHead=Beta(j)*R(j)+yHead;
             end
-            yHead=yHead/sum(B);
+            yHead=yHead/sum(Beta);
             error(i)=y(i+2)-yHead;
         end
         for i=1:98
