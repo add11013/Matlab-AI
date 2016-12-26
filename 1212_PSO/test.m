@@ -6,7 +6,7 @@ PlotTarget;
 
 %% PSO initialization
 swarm_size = 64;                       % number of the swarm particles
-maxIter = 200;                         % maximum number of iterations
+maxIter = 100;                         % maximum number of iterations
 inertia = 0.8;                         % W
 correction_factor = 2.0;               % c1,c2
 velocity(1:swarm_size,1:20) = 0;       % set initial velocity for particles
@@ -16,14 +16,14 @@ gbestDistance=1000;                    % the error of best swarm
 
 for i=1:swarm_size
    %Premise parameters
-    swarm(i,1)=12;          %c1
-    swarm(i,2)=10;          %a1
-    swarm(i,3)=13;          %c2
-    swarm(i,4)=10;          %a2
-    swarm(i,5)=10;          %c3
-    swarm(i,6)=10;          %a3
-    swarm(i,7)=14;          %c4
-    swarm(i,8)=10;          %a4
+    swarm(i,1)=rand(1)*10;          %c1
+    swarm(i,2)=rand(1)*10;          %a1
+    swarm(i,3)=rand(1)*10;          %c2
+    swarm(i,4)=rand(1)*10;          %a2
+    swarm(i,5)=rand(1)*10;          %c3
+    swarm(i,6)=rand(1)*10;          %a3
+    swarm(i,7)=rand(1)*10;          %c4
+    swarm(i,8)=rand(1)*10;          %a4
    %Consequence parameter(T-S)
     swarm(i,9)=rand(1);             %a10
     swarm(i,10)=rand(1);            %a11
@@ -69,13 +69,12 @@ for ite=1:maxIter
         
        %mse index
         mse=sum(e)/98;
-        plotmse(ite)=sum(e)/98;
        %pbest
         if mse<pbest(i)
             swarmPbest(i,:)=swarm(i,:); %update pbest position
             pbest(i)=mse;               %update pbest pbest mse index
         end
-        %gbest
+       %gbest
         if mse<gbestDistance
             gbest=i;                    %update which one is gbest
             gbestDistance=mse;          %update distance of gbest
@@ -83,11 +82,13 @@ for ite=1:maxIter
         
         %update velocity
         A=inertia*velocity(i,:);%w
-        B=correction_factor*rand(1)*0.1*(swarmPbest(i,:)-swarm(i,:));%pbest
-        C=correction_factor*rand(1)*0.1*(swarm(gbest,:) - swarm(i,:));%gbest
+        B=correction_factor*rand(1)*(swarmPbest(i,:)-swarm(i,:));%pbest
+        C=correction_factor*rand(1)*(swarm(gbest,:) - swarm(i,:));%gbest
         velocity(i,:)=A+B+C;
         
     end
+    
+    plotMSE(ite) = gbestDistance;
 end
 
 
@@ -110,17 +111,17 @@ end
            for rule=1:4
               yHead(j)=y1(rule,j)*beta(rule,j)/sum(beta(:,j));
            end
-        end
+       end
+       % Learning Curve
+        figure,
+        semilogy(plotMSE)
+        legend('Learning Curve');
+        figure(1)
     plot(x,yHead);
     xlabel('X');
     ylabel('Y');
     legend('target','model output');
-% Learning Curve
-    figure(2)
-    plot(1:maxIter,plotmse);
-    xlabel('Iterations');
-    ylabel('mse');
-    legend('Learning Curve');
 
 
+    afterPlot;
 
