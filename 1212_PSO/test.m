@@ -6,7 +6,7 @@ PlotTarget;
 
 %% PSO initialization
 swarm_size = 64;                       % number of the swarm particles
-maxIter = 100;                         % maximum number of iterations
+maxIter = 200;                         % maximum number of iterations
 inertia = 0.8;                         % W
 correction_factor = 2.0;               % c1,c2
 velocity(1:swarm_size,1:20) = 0;       % set initial velocity for particles
@@ -68,16 +68,16 @@ for ite=1:maxIter
         
         
        %mse index
-        mse=sum(e)/98;
+        mse(i)=sum(e)/98;
        %pbest
-        if mse<pbest(i)
+        if mse(i)<pbest(i)
             swarmPbest(i,:)=swarm(i,:); %update pbest position
-            pbest(i)=mse;               %update pbest pbest mse index
+            pbest(i)=mse(i);               %update pbest pbest mse index
         end
        %gbest
-        if mse<gbestDistance
+        if pbest(i)<gbestDistance
             gbest=i;                    %update which one is gbest
-            gbestDistance=mse;          %update distance of gbest
+            gbestDistance=pbest(i);          %update distance of gbest
         end
         
         %update velocity
@@ -112,15 +112,25 @@ end
               yHead(j)=y1(rule,j)*beta(rule,j)/sum(beta(:,j));
            end
        end
-       % Learning Curve
-        figure,
+       % Learning Curve log
+        figure(2)
         semilogy(plotMSE)
         legend('Learning Curve');
+        xlabel('iterations');
+        ylabel('semilogy(mse)');
+        
+       % Learning Curve  
+        figure(5)
+        plot(1:maxIter,plotMSE)
+        legend('Learning Curve');
+        xlabel('iterations');
+        ylabel('mse');
+        
         figure(1)
-    plot(x,yHead);
-    xlabel('X');
-    ylabel('Y');
-    legend('target','model output');
+        plot(x,yHead);
+        xlabel('X');
+        ylabel('Y');
+        legend('target','model output');
 
 
     afterPlot;
