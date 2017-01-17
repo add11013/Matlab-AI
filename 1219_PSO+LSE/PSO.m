@@ -24,6 +24,19 @@ for i=1:swarm_size
     swarm(i,6)=rand(1)*10;          %a3
     swarm(i,7)=rand(1)*10;          %c4
     swarm(i,8)=rand(1)*10;          %a4
+   %Consequence parameter(T-S)
+    swarm(i,9)=rand(1);             %a10
+    swarm(i,10)=rand(1);            %a11
+    swarm(i,11)=rand(1);            %a12
+    swarm(i,12)=rand(1);            %a20
+    swarm(i,13)=rand(1);            %a21
+    swarm(i,14)=rand(1);            %a22
+    swarm(i,15)=rand(1);            %a30
+    swarm(i,16)=rand(1);            %a31
+    swarm(i,17)=rand(1);            %a32
+    swarm(i,18)=rand(1);            %a40
+    swarm(i,19)=rand(1);            %a41
+    swarm(i,20)=rand(1);            %a42
 end
     PlotFuzzyset;
 
