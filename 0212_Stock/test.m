@@ -2,7 +2,7 @@ clear
 clc
 close all;
 tic
-target;
+target1;
 
 PrePara=12;
 ConsPara=27;
@@ -13,7 +13,7 @@ maxIter = 100;                          % maximum number of iterations
 inertia = 0.8;                         % W
 correction_factor = 2.0;               % c1,c2
 velocity(1:swarm_size,1:PrePara) = 0;  % set initial velocity for particles
-pbest(1:swarm_size) = 1e9;            % initial pbest distance
+pbest(1:swarm_size) = 1e20;            % initial pbest distance
 gbest=1;                               % the best swarm
 gbestDistance=1000;                    % the error of best swarm
 
@@ -22,7 +22,7 @@ gbestDistance=1000;                    % the error of best swarm
 for i=1:swarm_size
     % Premise parameters
     for j=1:PrePara
-        swarm(i,j)=rand(1)*5;
+        swarm(i,j)=rand(1)*15+5;
     end
     count=1;
 
@@ -137,7 +137,7 @@ end
         
        % Learning Curve  
         figure(5)
-        plot(1:maxIter,plotRMSE)
+        plot(1:maxIter,plotRMSE,'x')
         legend('Learning Curve');
         xlabel('iterations');
         ylabel('rmse');
