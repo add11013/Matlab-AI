@@ -11,7 +11,6 @@ h2std=std(h2);
 h1Center=subclust(h1,0.3);
 h2Center=subclust(h2,0.3);
 
-
 %% formation matrix
 k=1;
 for i=1:length(h1Center)
@@ -25,7 +24,7 @@ PrePara=(length(h1Center)+length(h2Center))*2;
 
 %% PSO initialization
 swarm_size = 64;                       % number of the swarm particles
-maxIter = 100;                         % maximum number of iterations
+maxIter = 30;                          % maximum number of iterations
 inertia = 0.8;                         % W
 correction_factor = 2.0;               % c1,c2
 velocity(1:swarm_size,1:PrePara) = 0;  % set initial velocity for particles
@@ -60,10 +59,10 @@ while length(bye)~=0
 end
 
 %% initialize parameters
-for i=1:64
+for i=1:swarm_size
    % Premise parameters
     for ii=1:PrePara
-        swarm(i,ii)=randn(1)*10+randn(1)*10*j;    
+        swarm(i,ii)=rand(1)*(4*yStd)+(yMean-2*yStd)+rand(1)*((4*yStd)+(yMean-2*yStd))*j;    
     end
     
     count=1;
@@ -76,35 +75,119 @@ for i=1:64
        end
     end
     % RLSE iteration
-      P(:,:,i)=10000*eye(3*9);
+      P(:,:,i)=10e5*eye(3*length(formationMatrix));
 end
 
 
 %% PSO main loop
 for ite=1:maxIter
-    for i=swarm_size 
+    for i=1:swarm_size
+       % move
+        swarm(i,:)=velocity(i,:)+swarm(i,:);
         beta=[];
         for j=1:point-2
            %Firing Strength
-            l=30;
-                termSet{1}={[swarm(1:2)],[swarm(3:4)],[swarm(5:6)]};
-                termSet{2}={[swarm(7:8)],[swarm(9:10)],[swarm(11:12)]};
+            l=yStd;
+                termSet{1}={[swarm(i,1:2)],[swarm(i,3:4)],[swarm(i,5:6)]};
+                termSet{2}={[swarm(i,7:8)],[swarm(i,9:10)],[swarm(i,11:12)]};
             for rule=1:length(formationMatrix)
                 beta(rule,j)=ws(h1(j),termSet{1}{formationMatrix(rule,1)},l)*ws(h2(j),termSet{2}{formationMatrix(rule,2)},l);
             end
            %Normalization
             for rule=1:length(formationMatrix)
                 g(rule)=sum(beta(rule,:))/sum(beta(:));
-            end        
+            end
+            SS=[];DD=[];
+            for k=1:length(formationMatrix)
+                S=[g(k) g(k) g(k)];
+                SS=[SS S];
+                D=[1 y(j) y(j+1)];
+                DD=[DD D];
+            end
+            A(j,:)=DD.*SS;
         end
-        SS=[];
-        for k=1:length(formationMatrix)
-                S=[g(k); g(k); g(k);];
-                SS=[SS; S];
+    
+            b=A';
+
+        for k=0:point-3
+            P(:,:,i)=P(:,:,i)-(P(:,:,i)*b(:,k+1)*b(:,k+1)'*P(:,:,i))/(1+b(:,k+1)'*P(:,:,i)*b(:,k+1));
+            the(:,:,i)=the(:,:,i)+P(:,:,i)*b(:,k+1)*(y(k+3)-b(:,k+1)'*the(:,:,i));
+        end
+       %new_yHead(output)
+        for j=1:point-2
+          output(j,1)=A(j,:)*the(:,:,i);  %y 
+          %caculate error
+           e(j)=(y(j+2)-output(j,1))^2; % target-yHead
         end
         
+       %mse index
+        rmse(i)=sqrt(sum(e)/(point-2));
+         
+        %pbest
+        if rmse(i)<pbest(i)
+            swarmPbest(i,:)=swarm(i,:);     %update pbest position
+            pbest(i)=rmse(i);               %update pbest pbest mse index
+        end
+       %gbest
+        if pbest(i)<gbestDistance
+            gbest=i;                    %update which one is gbest
+            gbestDistance=pbest(i);          %update distance of gbest
+        end
+        
+        %update velocity
+        AA=inertia*velocity(i,:);%w
+        BB=correction_factor*rand(1)*(swarmPbest(i,:)-swarm(i,:));%pbest
+        CC=correction_factor*rand(1)*(swarm(gbest,:) - swarm(i,:));%gbest
+        velocity(i,:)=AA+BB+CC;
     end
+    plotRMSE(ite) = gbestDistance;
 end
+%% result
+% OUTPUT and Target
+    figure(1);
+    x=linspace(x(3),x(point),point-2);
+    beta=[];
+       for j=1:point-2
+          %IFpart(Rule)
+           termSet{1}={[swarm(gbest,1:2)],[swarm(gbest,3:4)],[swarm(gbest,5:6)]};
+           termSet{2}={[swarm(gbest,7:8)],[swarm(gbest,9:10)],[swarm(gbest,11:12)]};
+           for rule=1:length(formationMatrix)
+               beta(rule,j)=ws(h1(j),termSet{1}{formationMatrix(rule,1)},l)*ws(h2(j),termSet{2}{formationMatrix(rule,2)},l);
+           end
+           %new_yHead(output)
+            for rule=1:length(formationMatrix)
+                g(rule)=sum(beta(rule,:))/sum(beta(:));
+            end
+            SS=[];DD=[];
+            for k=1:length(formationMatrix)
+                S=[g(k) g(k) g(k)];
+                SS=[SS S];
+                D=[1 y(j) y(j+1)];
+                DD=[DD D];
+            end
+            A(j,:)=DD.*SS;
+            output1(j,1)=A(j,:)*the(:,:,gbest);  %y
+       end
+       % Learning Curve log
+        figure(2)
+        semilogy(plotRMSE)
+        legend('Learning Curve');
+        xlabel('iterations');
+        ylabel('semilogy(rmse)');
+        
+       % Learning Curve  
+        figure(5)
+        plot(1:maxIter,plotRMSE,'x')
+        legend('Learning Curve');
+        xlabel('iterations');
+        ylabel('rmse');
+        
+        figure(1)
+        plot(x,output1,'--');
+        xlabel('X');
+        ylabel('Y');
+        legend('target','model output');
+
 
 toc
 
