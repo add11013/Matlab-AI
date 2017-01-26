@@ -11,6 +11,7 @@ h2std=std(h2);
 h1Center=subclust(h1,0.3);
 h2Center=subclust(h2,0.3);
 
+
 %% formation matrix
 k=1;
 for i=1:length(h1Center)
@@ -62,7 +63,7 @@ end
 for i=1:swarm_size
    % Premise parameters
     for ii=1:PrePara
-        swarm(i,ii)=rand(1)*(4*yStd)+(yMean-2*yStd)+rand(1)*((4*yStd)+(yMean-2*yStd))*j;    
+        swarm(i,ii)=rand(1)*(2*yStd)+(yMean-yStd)+rand(1)*((2*yStd)+(yMean-yStd))*j;    
     end
     
     count=1;
@@ -85,26 +86,28 @@ for ite=1:maxIter
        % move
         swarm(i,:)=velocity(i,:)+swarm(i,:);
         beta=[];
-        for j=1:point-2
+        for jj=1:point-2
            %Firing Strength
-            l=yStd;
+            l=1;
                 termSet{1}={[swarm(i,1:2)],[swarm(i,3:4)],[swarm(i,5:6)]};
                 termSet{2}={[swarm(i,7:8)],[swarm(i,9:10)],[swarm(i,11:12)]};
             for rule=1:length(formationMatrix)
-                beta(rule,j)=ws(h1(j),termSet{1}{formationMatrix(rule,1)},l)*ws(h2(j),termSet{2}{formationMatrix(rule,2)},l);
+                beta(rule,jj)=ws(h1(jj),termSet{1}{formationMatrix(rule,1)},l)*ws(h2(jj),termSet{2}{formationMatrix(rule,2)},l);
             end
-           %Normalization
-            for rule=1:length(formationMatrix)
-                g(rule)=sum(beta(rule,:))/sum(beta(:));
-            end
+        end
+       %Normalization
+        for rule=1:length(formationMatrix)
+            g(rule)=sum(beta(rule,:))/sum(beta(:));
+        end
+        for jj=1:point-2
             SS=[];DD=[];
             for k=1:length(formationMatrix)
                 S=[g(k) g(k) g(k)];
                 SS=[SS S];
-                D=[1 y(j) y(j+1)];
+                D=[1 y(jj) y(jj+1)];
                 DD=[DD D];
             end
-            A(j,:)=DD.*SS;
+            A(jj,:)=DD.*SS;
         end
     
             b=A';
@@ -114,14 +117,14 @@ for ite=1:maxIter
             the(:,:,i)=the(:,:,i)+P(:,:,i)*b(:,k+1)*(y(k+3)-b(:,k+1)'*the(:,:,i));
         end
        %new_yHead(output)
-        for j=1:point-2
-          output(j,1)=A(j,:)*the(:,:,i);  %y 
+        for jj=1:point-2
+          output(jj,1)=A(jj,:)*the(:,:,i);  %y 
           %caculate error
-           e(j)=(y(j+2)-output(j,1))^2; % target-yHead
+           e(jj)=(y(jj+2)-output(jj,1))^2; % target-yHead
         end
         
        %mse index
-        rmse(i)=sqrt(sum(e)/(point-2));
+        rmse(i)=(sum(e)/(point-2))
          
         %pbest
         if rmse(i)<pbest(i)
@@ -147,26 +150,28 @@ end
     figure(1);
     x=linspace(x(3),x(point),point-2);
     beta=[];
-       for j=1:point-2
+       for jj=1:point-2
           %IFpart(Rule)
            termSet{1}={[swarm(gbest,1:2)],[swarm(gbest,3:4)],[swarm(gbest,5:6)]};
            termSet{2}={[swarm(gbest,7:8)],[swarm(gbest,9:10)],[swarm(gbest,11:12)]};
            for rule=1:length(formationMatrix)
-               beta(rule,j)=ws(h1(j),termSet{1}{formationMatrix(rule,1)},l)*ws(h2(j),termSet{2}{formationMatrix(rule,2)},l);
+               beta(rule,jj)=ws(h1(jj),termSet{1}{formationMatrix(rule,1)},l)*ws(h2(jj),termSet{2}{formationMatrix(rule,2)},l);
            end
-           %new_yHead(output)
-            for rule=1:length(formationMatrix)
-                g(rule)=sum(beta(rule,:))/sum(beta(:));
-            end
+       end
+      %new_yHead(output)
+       for rule=1:length(formationMatrix)
+           g(rule)=sum(beta(rule,:))/sum(beta(:));
+       end
+       for jj=1:point-2
             SS=[];DD=[];
             for k=1:length(formationMatrix)
                 S=[g(k) g(k) g(k)];
                 SS=[SS S];
-                D=[1 y(j) y(j+1)];
+                D=[1 y(jj) y(jj+1)];
                 DD=[DD D];
             end
-            A(j,:)=DD.*SS;
-            output1(j,1)=A(j,:)*the(:,:,gbest);  %y
+            A(jj,:)=DD.*SS;
+            output1(jj,1)=A(jj,:)*the(:,:,gbest);  %y
        end
        % Learning Curve log
         figure(2)

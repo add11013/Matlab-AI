@@ -2,14 +2,14 @@ clear
 clc
 close all;
 tic
-target1;
+target2;
 
 PrePara=12;
 ConsPara=27;
 
 %% PSO initialization
 swarm_size = 64;                       % number of the swarm particles
-maxIter = 100;                          % maximum number of iterations
+maxIter = 30;                          % maximum number of iterations
 inertia = 0.8;                         % W
 correction_factor = 2.0;               % c1,c2
 velocity(1:swarm_size,1:PrePara) = 0;  % set initial velocity for particles
