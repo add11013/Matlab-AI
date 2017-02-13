@@ -2,7 +2,7 @@ clear
 clc
 close all;
 tic
-target1;
+target;
 
 PrePara=12;
 ConsPara=27;

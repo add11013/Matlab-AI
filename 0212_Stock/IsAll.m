@@ -42,23 +42,26 @@ end
 
 %% treshold
 bb=1;
+delFor=0;
 for rule=1:length(formationMatrix)
     treshold=0.3*std(reshape(beta,length(formationMatrix)*(point-2),1));
     if std(beta(rule,:))<treshold
         bye(bb)=rule;
         bb=bb+1;
-    end    
+        delFor=1;
+    end
 end
-bb=1;
-i=bye(bb);
-formationMatrix(i,:)=[];
-bye(bb)=[];
-while length(bye)~=0
-    i=bye(bb);
-    formationMatrix(i-1,:)=[];
-    bye(bb)=[];
+if delFor==1
+        bb=1;
+        i=bye(bb);
+        formationMatrix(i,:)=[];
+        bye(bb)=[];
+        while length(bye)~=0
+            i=bye(bb);
+            formationMatrix(i-1,:)=[];
+            bye(bb)=[];
+        end
 end
-
 %% initialize parameters
 for i=1:swarm_size
    % Premise parameters
@@ -89,8 +92,8 @@ for ite=1:maxIter
         for jj=1:point-2
            %Firing Strength
             l=1;
-                termSet{1}={[swarm(i,1:2)],[swarm(i,3:4)],[swarm(i,5:6)]};
-                termSet{2}={[swarm(i,7:8)],[swarm(i,9:10)],[swarm(i,11:12)]};
+                termSet{1}={[swarm(i,1:2)],[swarm(i,3:4)]};
+                termSet{2}={[swarm(i,5:6)],[swarm(i,7:8)]};
             for rule=1:length(formationMatrix)
                 beta(rule,jj)=ws(h1(jj),termSet{1}{formationMatrix(rule,1)},l)*ws(h2(jj),termSet{2}{formationMatrix(rule,2)},l);
             end
@@ -124,7 +127,7 @@ for ite=1:maxIter
         end
         
        %mse index
-        rmse(i)=(sum(e)/(point-2))
+        rmse(i)=(sum(e)/(point-2));
          
         %pbest
         if rmse(i)<pbest(i)
@@ -152,8 +155,8 @@ end
     beta=[];
        for jj=1:point-2
           %IFpart(Rule)
-           termSet{1}={[swarm(gbest,1:2)],[swarm(gbest,3:4)],[swarm(gbest,5:6)]};
-           termSet{2}={[swarm(gbest,7:8)],[swarm(gbest,9:10)],[swarm(gbest,11:12)]};
+           termSet{1}={[swarm(gbest,1:2)],[swarm(gbest,3:4)]};
+           termSet{2}={[swarm(gbest,5:6)],[swarm(gbest,7:8)]};
            for rule=1:length(formationMatrix)
                beta(rule,jj)=ws(h1(jj),termSet{1}{formationMatrix(rule,1)},l)*ws(h2(jj),termSet{2}{formationMatrix(rule,2)},l);
            end
@@ -192,6 +195,35 @@ end
         xlabel('X');
         ylabel('Y');
         legend('target','model output');
+        
+        x=linspace(point+1,allpoint,testPoint);
+        beta=[];
+        testh1=y(point-1:allpoint-2);
+        testh2=y(point:allpoint-1);
+       for jj=1:testPoint
+          %IFpart(Rule)
+           termSet{1}={[swarm(gbest,1:2)],[swarm(gbest,3:4)]};
+           termSet{2}={[swarm(gbest,5:6)],[swarm(gbest,7:8)]};
+           for rule=1:length(formationMatrix)
+               beta(rule,jj)=ws(testh1(jj),termSet{1}{formationMatrix(rule,1)},l)*ws(testh2(jj),termSet{2}{formationMatrix(rule,2)},l);
+           end
+       end
+      %new_yHead(output)
+       for rule=1:length(formationMatrix)
+           g(rule)=sum(beta(rule,:))/sum(beta(:));
+       end
+       for jj=1:testPoint
+            SS=[];DD=[];
+            for k=1:length(formationMatrix)
+                S=[g(k) g(k) g(k)];
+                SS=[SS S];
+                D=[1 y(point+jj-1) y(point+jj)];
+                DD=[DD D];
+            end
+            A(jj,:)=DD.*SS;
+            output2(jj,1)=A(jj,:)*the(:,:,gbest);  %y
+       end
+       plot(x,output2,'r--',[point,point],[min(y),max(y)+2],'b');
 
 
 toc
