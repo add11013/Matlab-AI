@@ -6,25 +6,18 @@ target;
 
 %% PSO initialization
 swarm_size = 64;                       % number of the swarm particles
-maxIter = 100;                         % maximum number of iterations
+maxIter = 10;                         % maximum number of iterations
 inertia = 0.8;                         % W
 correction_factor = 2.0;               % c1,c2
 velocity(1:swarm_size,1:8) = 0;        % set initial velocity for particles
 pbest(1:swarm_size) = 1e9;          % initial pbest distance
 gbest=1;                               % the best swarm
-gbestDistance=1000;                    % the error of best swarm
+gbestDistance=1e13;                    % the error of best swarm
 
 %% parameters initial
 for i=1:swarm_size
     % Premise parameters
-    swarm(i,1)=rand(1)*10;          %c1
-    swarm(i,2)=rand(1)*10;          %a1
-    swarm(i,3)=rand(1)*10;          %c2
-    swarm(i,4)=rand(1)*10;          %a2
-    swarm(i,5)=rand(1)*10;          %c3
-    swarm(i,6)=rand(1)*10;          %a3
-    swarm(i,7)=rand(1)*10;          %c4
-    swarm(i,8)=rand(1)*10;          %a4
+    swarm(i,1:8)=rand(1)*(4*yStd)+(yMean-2*yStd);          %c1
     count=1;
 
     % Consequence parameters    

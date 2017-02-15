@@ -2,7 +2,7 @@ clear;
 close all;
 clc;
 tic
-target;
+SP;
 %% substractive clustering
 h1=y(1:point-2);
 h2=y(2:point-1);
@@ -25,13 +25,13 @@ PrePara=(length(h1Center)+length(h2Center))*2;
 
 %% PSO initialization
 swarm_size = 64;                       % number of the swarm particles
-maxIter = 30;                          % maximum number of iterations
+maxIter = 300;                          % maximum number of iterations
 inertia = 0.8;                         % W
 correction_factor = 2.0;               % c1,c2
 velocity(1:swarm_size,1:PrePara) = 0;  % set initial velocity for particles
 pbest(1:swarm_size) = 1e9;             % initial pbest distance
 gbest=1;                               % the best swarm
-gbestDistance=1000;                    % the error of best swarm
+gbestDistance=1e9;                    % the error of best swarm
 
 %% firing strength
 for i=1:point-2
@@ -66,7 +66,7 @@ end
 for i=1:swarm_size
    % Premise parameters
     for ii=1:PrePara
-        swarm(i,ii)=rand(1)*(2*yStd)+(yMean-yStd)+rand(1)*((2*yStd)+(yMean-yStd))*j;    
+        swarm(i,ii)=rand(1)*(4*yStd)+(yMean-2*yStd)+rand(1)*((4*yStd)+(yMean-2*yStd))*j;    
     end
     
     count=1;
@@ -92,8 +92,17 @@ for ite=1:maxIter
         for jj=1:point-2
            %Firing Strength
             l=1;
-                termSet{1}={[swarm(i,1:2)],[swarm(i,3:4)]};
-                termSet{2}={[swarm(i,5:6)],[swarm(i,7:8)]};
+            j1=1;
+            for number=1:PrePara/4
+                temp=[swarm(i,j1:j1+1)];
+                termSet{1}(number)={temp};
+                j1=j1+2;
+            end
+            for number=1:PrePara/4
+                temp=[swarm(i,j1:j1+1)];
+                termSet{2}(number)={temp};
+                j1=j1+2;
+            end
             for rule=1:length(formationMatrix)
                 beta(rule,jj)=ws(h1(jj),termSet{1}{formationMatrix(rule,1)},l)*ws(h2(jj),termSet{2}{formationMatrix(rule,2)},l);
             end
@@ -127,7 +136,7 @@ for ite=1:maxIter
         end
         
        %mse index
-        rmse(i)=(sum(e)/(point-2));
+        rmse(i)=sqrt(sum(e)/(point-2));
          
         %pbest
         if rmse(i)<pbest(i)
@@ -155,8 +164,17 @@ end
     beta=[];
        for jj=1:point-2
           %IFpart(Rule)
-           termSet{1}={[swarm(gbest,1:2)],[swarm(gbest,3:4)]};
-           termSet{2}={[swarm(gbest,5:6)],[swarm(gbest,7:8)]};
+            j1=1;
+            for number=1:PrePara/4
+                temp=[swarm(gbest,j1:j1+1)];
+                termSet{1}(number)={temp};
+                j1=j1+2;
+            end
+            for number=1:PrePara/4
+                temp=[swarm(gbest,j1:j1+1)];
+                termSet{2}(number)={temp};
+                j1=j1+2;
+            end
            for rule=1:length(formationMatrix)
                beta(rule,jj)=ws(h1(jj),termSet{1}{formationMatrix(rule,1)},l)*ws(h2(jj),termSet{2}{formationMatrix(rule,2)},l);
            end
@@ -202,8 +220,17 @@ end
         testh2=y(point:allpoint-1);
        for jj=1:testPoint
           %IFpart(Rule)
-           termSet{1}={[swarm(gbest,1:2)],[swarm(gbest,3:4)]};
-           termSet{2}={[swarm(gbest,5:6)],[swarm(gbest,7:8)]};
+            j1=1;
+            for number=1:PrePara/4
+                temp=[swarm(gbest,j1:j1+1)];
+                termSet{1}(number)={temp};
+                j1=j1+2;
+            end
+            for number=1:PrePara/4
+                temp=[swarm(gbest,j1:j1+1)];
+                termSet{2}(number)={temp};
+                j1=j1+2;
+            end
            for rule=1:length(formationMatrix)
                beta(rule,jj)=ws(testh1(jj),termSet{1}{formationMatrix(rule,1)},l)*ws(testh2(jj),termSet{2}{formationMatrix(rule,2)},l);
            end
@@ -223,7 +250,7 @@ end
             A(jj,:)=DD.*SS;
             output2(jj,1)=A(jj,:)*the(:,:,gbest);  %y
        end
-       plot(x,output2,'r--',[point,point],[min(y),max(y)+2],'b');
+       plot(x,output2,'r--');
 
 
 toc
