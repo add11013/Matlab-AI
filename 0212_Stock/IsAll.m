@@ -25,7 +25,7 @@ PrePara=(length(h1Center)+length(h2Center))*2;
 
 %% PSO initialization
 swarm_size = 64;                       % number of the swarm particles
-maxIter = 300;                          % maximum number of iterations
+maxIter = 150;                          % maximum number of iterations
 inertia = 0.8;                         % W
 correction_factor = 2.0;               % c1,c2
 velocity(1:swarm_size,1:PrePara) = 0;  % set initial velocity for particles
