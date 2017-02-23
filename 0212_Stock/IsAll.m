@@ -25,7 +25,7 @@ PrePara=(length(h1Center)+length(h2Center))*2;
 
 %% PSO initialization
 swarm_size = 64;                       % number of the swarm particles
-maxIter = 150;                          % maximum number of iterations
+maxIter = 10;                          % maximum number of iterations
 inertia = 0.8;                         % W
 correction_factor = 2.0;               % c1,c2
 velocity(1:swarm_size,1:PrePara) = 0;  % set initial velocity for particles
@@ -66,9 +66,9 @@ end
 for i=1:swarm_size
    % Premise parameters
     for ii=1:PrePara
-        swarm(i,ii)=rand(1)*(4*yStd)+(yMean-2*yStd)+rand(1)*((4*yStd)+(yMean-2*yStd))*j;    
+        swarm(i,ii)=randn(1)+randn(1)*j;
     end
-    
+        swarmPbest(i,:)=swarm(i,:);
     count=1;
    % Consequence parameters    
     for rule=1:length(formationMatrix)
@@ -151,8 +151,8 @@ for ite=1:maxIter
         
         %update velocity
         AA=inertia*velocity(i,:);%w
-        BB=correction_factor*rand(1)*(swarmPbest(i,:)-swarm(i,:));%pbest
-        CC=correction_factor*rand(1)*(swarm(gbest,:) - swarm(i,:));%gbest
+        BB=correction_factor*randn(1)*(swarmPbest(i,:)-swarm(i,:));%pbest
+        CC=correction_factor*randn(1)*(swarm(gbest,:) - swarm(i,:));%gbest
         velocity(i,:)=AA+BB+CC;
     end
     plotRMSE(ite) = gbestDistance;
