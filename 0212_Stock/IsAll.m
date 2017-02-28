@@ -66,7 +66,7 @@ end
 for i=1:swarm_size
    % Premise parameters
     for ii=1:PrePara
-        swarm(i,ii)=randn(1)+randn(1)*j;
+        swarm(i,ii)=randn(1)*yMean+randn(1)*j;
     end
         swarmPbest(i,:)=swarm(i,:);
     count=1;

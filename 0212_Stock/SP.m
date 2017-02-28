@@ -1,8 +1,8 @@
 figure(1);
 hold on
-t=fetch(yahoo,'^GSPC','Close','1/1/2016','12/31/2016','d');
-t2017=fetch(yahoo,'^GSPC','Close','1/1/2017','2/9/2017','d');
-%load SP
+%t=fetch(yahoo,'^GSPC','Close','1/1/2016','12/31/2016','d');
+%t2017=fetch(yahoo,'^GSPC','Close','1/1/2017','2/9/2017','d');
+load SP
 testPoint=length(t2017);
 point=length(t);
 allpoint=point+testPoint;

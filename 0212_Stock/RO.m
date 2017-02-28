@@ -2,7 +2,7 @@ clear;
 close all;
 clc;
 tic
-SP;
+target1;
 %% substractive clustering
 h1=y(1:point-2);
 h2=y(2:point-1);
@@ -50,18 +50,15 @@ if delFor==1
         bye(bb)=[];
     end
 end
-
-%% PSO initialization
-swarm_size = 30;                       % number of the swarm particles
-maxIter = 20;                          % maximum number of iterations
-inertia = 0.8;                         % W
-correction_factor = 2.0;               % c1,c2
-
-%% initialize parameters
+PrePara=(length(h1Center)+length(h2Center))*2;    %Premise Parameters
+%% RO initial
+swarm_size=max(3,fix(4*log10(PrePara+1)));
+maxIter=20*PrePara;
+accuracy=5e-8;
 for i=1:swarm_size
     % Premise parameters
     for ii=1:PrePara
-        swarm(i).Position(ii)=randn*yMean;
+        swarm(i).Position(ii)=(randn)*yMean;
         swarm(i).pBestPosition(ii)=swarm(i).Position(ii);
     end
     count=1;
@@ -76,20 +73,17 @@ for i=1:swarm_size
     % RLSE iteration
     P(:,:,i)=10e6*eye(3*length(formationMatrix));
 end
-for i=1:swarm_size
-    swarm(i).velocity(1:PrePara)=0;
-    swarm(i).pBestDistance=1e20;
-end
-gBest=1;                               % the best swarm
-gBestDistance=1e20;                    % error of the best swarm
-gBestPosition=swarm(i).Position;
+gBest=1;
+gBestDistance=1e20;
 
-
-%% PSO main loop
+%% RO main loop
 for ite=1:maxIter
+    stepsize=max((maxIter-ite-15*PrePara)/maxIter,accuracy/PrePara);
     for i=1:swarm_size
-        % move
-        swarm(i).Position=swarm(i).velocity+swarm(i).Position;
+        for ii=1:PrePara
+            swarm(i).Position(ii)=randn*yMean*stepsize+swarm(gBest).Position(ii);
+        end
+        
         Iteration(ite).beta=[];
         for jj=1:point-2
             %Firing Strength
@@ -139,27 +133,16 @@ for ite=1:maxIter
         %mse index
         swarm(i).Iteration(ite).rmse=sqrt(sum(e)/(point-2));
         
-        %pbest
-        if swarm(i).Iteration(ite).rmse<swarm(i).pBestDistance
-            swarm(i).pBestPosition=swarm(i).Position;        %update pbest position
-            swarm(i).pBestDistance=swarm(i).Iteration(ite).rmse;               %update pbest pbest mse index
-        end
         %gbest
         if swarm(i).Iteration(ite).rmse<gBestDistance
             gBest=i;                                         %update which one is gbest
             gBestDistance=swarm(i).Iteration(ite).rmse;         %update distance of gbest
             gBestPosition=swarm(i).Position;
         end
-        %update velocity
-        AA=inertia*swarm(i).velocity;%w
-        BB=correction_factor*randn(1)*(swarm(i).pBestPosition-swarm(i).Position);%pbest
-        CC=correction_factor*randn(1)*(gBestPosition - swarm(i).Position);%gbest
-        swarm(i).velocity=AA+BB+CC;
+        
     end
-    
     plotRMSE(ite) = gBestDistance;
 end
-
 
 %% result
 % OUTPUT and Target
