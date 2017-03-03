@@ -2,7 +2,7 @@ clear;
 close all;
 clc;
 tic
-target1;
+target;
 %% substractive clustering
 h1=y(1:point-2);
 h2=y(2:point-1);
@@ -58,7 +58,7 @@ accuracy=5e-8;
 for i=1:swarm_size
     % Premise parameters
     for ii=1:PrePara
-        swarm(i).Position(ii)=(randn)*yMean;
+        swarm(i).Position(ii)=(randn)*yMean*10000;
         swarm(i).pBestPosition(ii)=swarm(i).Position(ii);
     end
     count=1;
@@ -201,44 +201,44 @@ xlabel('X');
 ylabel('Y');
 legend('target','model output');
 
-x=linspace(point+2,allpoint+1,testPoint);
-beta=[];
-testh1=y(point-1:allpoint-2);
-testh2=y(point:allpoint-1);
-for jj=1:testPoint
-    %IFpart(Rule)
-    j1=1;
-    for number=1:PrePara/4
-        temp=[swarm(gBest).Position(j1:j1+1)];
-        termSet{1}(number)={temp};
-        j1=j1+2;
-    end
-    for number=1:PrePara/4
-        temp=[swarm(gBest).Position(j1:j1+1)];
-        termSet{2}(number)={temp};
-        j1=j1+2;
-    end
-    beta=[];
-    for rule=1:length(formationMatrix)
-        beta(rule,jj)=gaussmf(testh1(jj),termSet{1}{formationMatrix(rule,1)})*gaussmf(testh2(jj),termSet{2}{formationMatrix(rule,2)});
-    end
-end
-%new_yHead(output)
-for rule=1:length(formationMatrix)
-    g(rule)=sum(beta(rule,:))/sum(beta(:));
-end
-for jj=1:testPoint
-    SS=[];DD=[];
-    for k=1:length(formationMatrix)
-        S=[g(k) g(k) g(k)];
-        SS=[SS S];
-        D=[1 y(point+jj-1) y(point+jj)];
-        DD=[DD D];
-    end
-    A(jj,:)=DD.*SS;
-    output2(jj,1)=A(jj,:)*the(:,:,gBest);  %y
-end
-plot(x,output2,'r--');
+% x=linspace(point+2,allpoint+1,testPoint);
+% beta=[];
+% testh1=y(point-1:allpoint-2);
+% testh2=y(point:allpoint-1);
+% for jj=1:testPoint
+%     %IFpart(Rule)
+%     j1=1;
+%     for number=1:PrePara/4
+%         temp=[swarm(gBest).Position(j1:j1+1)];
+%         termSet{1}(number)={temp};
+%         j1=j1+2;
+%     end
+%     for number=1:PrePara/4
+%         temp=[swarm(gBest).Position(j1:j1+1)];
+%         termSet{2}(number)={temp};
+%         j1=j1+2;
+%     end
+%     beta=[];
+%     for rule=1:length(formationMatrix)
+%         beta(rule,jj)=gaussmf(testh1(jj),termSet{1}{formationMatrix(rule,1)})*gaussmf(testh2(jj),termSet{2}{formationMatrix(rule,2)});
+%     end
+% end
+% %new_yHead(output)
+% for rule=1:length(formationMatrix)
+%     g(rule)=sum(beta(rule,:))/sum(beta(:));
+% end
+% for jj=1:testPoint
+%     SS=[];DD=[];
+%     for k=1:length(formationMatrix)
+%         S=[g(k) g(k) g(k)];
+%         SS=[SS S];
+%         D=[1 y(point+jj-1) y(point+jj)];
+%         DD=[DD D];
+%     end
+%     A(jj,:)=DD.*SS;
+%     output2(jj,1)=A(jj,:)*the(:,:,gBest);  %y
+% end
+% plot(x,output2,'r--');
 
 
 toc
