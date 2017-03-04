@@ -2,7 +2,7 @@ clear;
 close all;
 clc;
 tic
-target;
+TAIEX;
 %% substractive clustering
 h1=y(1:point-2);
 h2=y(2:point-1);
@@ -52,8 +52,8 @@ if delFor==1
 end
 
 %% PSO initialization
-swarm_size = 50;                       % number of the swarm particles
-maxIter = 20;                          % maximum number of iterations
+swarm_size = 64;                       % number of the swarm particles
+maxIter = 30;                          % maximum number of iterations
 inertia = 0.8;                         % W
 correction_factor = 2.0;               % c1,c2
 
@@ -61,7 +61,7 @@ correction_factor = 2.0;               % c1,c2
 for i=1:swarm_size
     % Premise parameters
     for ii=1:PrePara
-        swarm(i).Position(ii)=randn*1000;
+        swarm(i).Position(ii)=randn*yMean*1000;
     end
         swarm(i).pBestPosition=swarm(i).Position;
     count=1;
@@ -74,7 +74,7 @@ for i=1:swarm_size
         end
     end
     % RLSE iteration
-    P(:,:,i)=1e8*eye(3*length(formationMatrix));
+    P(:,:,i)=1e9*eye(3*length(formationMatrix));
 end
 for i=1:swarm_size
     swarm(i).velocity(1:PrePara)=0;
@@ -137,7 +137,7 @@ for ite=1:maxIter
         end
 
         %mse index
-        swarm(i).Iteration(ite).rmse=(sum(e)/(point-2));
+        swarm(i).Iteration(ite).rmse=sqrt(sum(e)/(point-2));
 
         %pbest
         if swarm(i).Iteration(ite).rmse<swarm(i).pBestDistance
