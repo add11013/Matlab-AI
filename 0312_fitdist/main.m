@@ -12,7 +12,7 @@ yStd=std(y);
 
 plot(x,y);
 
-pd=fitdist(y,'kernel');
+pd=fitdist(y,'normal');
 sample=pdf(pd,y);
 figure(2)
 plot(x,sample);
