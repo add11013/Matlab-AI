@@ -183,6 +183,7 @@ end
                 beta(rule,jj)=gaussmf(testh1(jj),termSet{1}{formationMatrix(rule,1)})*gaussmf(testh2(jj),termSet{2}{formationMatrix(rule,2)});
             end
         end
+        
         %new_yHead(output)
         for rule=1:length(formationMatrix)
             g(rule)=sum(beta(rule,:))/sum(beta(:));
@@ -196,7 +197,10 @@ end
             A(jj,:)=TMP1;
             output2(jj,1)=A(jj,:)*swarm(gBest).RLSE.theta;  %y
         end
-        
+        for jj=1:testPoint
+            PSO.test.e(jj)=(y(jj+point-1)-output2(jj,1))^2;
+        end
+            PSO.test.rmse=sqrt(sum(PSO.test.e)/(testPoint))
         plot(x,output2,'r--');          
 
 toc
