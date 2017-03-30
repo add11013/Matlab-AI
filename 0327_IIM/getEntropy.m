@@ -5,12 +5,13 @@ function output = getEntropy(x)
     x_Mean=mean(x);
     x_std=std(x);
     pd=fitdist(x,'kernel');
-    range=linspace(x_Mean-5*x_std,x_Mean+5*x_std,300);
+    range=linspace(mean(x)-5*std(x),mean(x)+5*std(x),length(x));
+    r=range(2)-range(1);
     y=pdf(pd,range);
     %plot(range,y);
-    for i=1:length(x)
-        p(i)=-y(i)*log2(y(i));
+    for i=1:length(y)
+        p(i)=y(i)*log(1/y(i));
     end
-    output=sum(p);
+    output=sum(p)*r;
 end
 
