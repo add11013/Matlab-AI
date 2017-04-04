@@ -20,11 +20,17 @@ load data.csv
                  xP(c,1)=data(ii,i);
              end
          end
+         xxx=data(:,i);
+         pd=fitdist(xxx,'kernel');
+         x=linspace(mean(xxx)-5*std(xxx),mean(xxx)+5*std(xxx),300);
+         sample=pdf(pd,x);
+         rat1=cdf(pd,0);
+         rat2=1-rat1;
          if(i==j)
-            %IIM(i,j)=((h_y-h_yOfxN)+(h_y-h_yOfxP))/2;
-            IIM(i,j)=(h_y-h_yOfxP)*getEntropy(xP)+(h_y-h_yOfxN)*getEntropy(xN);
+            IIM(i,j)=(h_y-h_yOfxP)*rat2+(h_y-h_yOfxN)*rat1;            
+            %IIM(i,j)=0;
          else
-            IIM(i,j)=(h_y-h_yOfxP)*getEntropy(xP)+(h_y-h_yOfxN)*getEntropy(xN);
+            IIM(i,j)=(h_y-h_yOfxP)*rat2+(h_y-h_yOfxN)*rat1;
             %IIM(i,j)=((h_y-h_yOfxN)+(h_y-h_yOfxP))/2;
          end
      end

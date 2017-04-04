@@ -38,10 +38,11 @@ function [i] = computei2( data,locx,locy)
 
 pd=fitdist(bb,'kernel');
 x=linspace(pd.mean-pd.std*5,pd.mean+pd.std*5,300);
-rat1=cdf(pd,0);rat2=1-rat1;
+rat1=cdf(pd,0)
+rat2=1-rat1
 %[rat1,rat2]=computerate(bb);
-%i=(alfa1-beta1)*rat2+(alfa2-beta2)*rat1;
-i=((alfa1-beta1)+(alfa2-beta2))/2;
+i=(alfa1-beta1)*rat2+(alfa2-beta2)*rat1;
+%i=((alfa1-beta1)+(alfa2-beta2))/2;
 %i=alfa1-(beta1*rat2+beta2*rat1);
 
 end
