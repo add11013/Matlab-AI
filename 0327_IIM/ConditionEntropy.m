@@ -15,13 +15,11 @@ function output = ConditionEntropy(data,f1,f2,NorP)
          for i=1:c
              yOfxP(i,1)=data(xP_yIndex(i),f2);
          end
-         %H(X+)
-         y=data(:,f2);
-         r_y=linspace(mean(y)-5*std(y),mean(y)+5*std(y),300);
-         ry=r_y(2)-r_y(1);
-         r_x=linspace(mean(xP)-5*std(xP),mean(xP)+5*std(xP),300);
-         rx=r_x(2)-r_x(1);
-         output=sum(getPdf(xP).*rx.*sum(getPdf(yOfxP).*log(1./getPdf(yOfxP)))).*ry;
+         [r y_pdf]=getPdf(data(:,f2));
+         [ry yOfxP_pdf]=getPdf(yOfxP);
+         [rx xP_pdf]=getPdf(xP);
+         phi=max(max(xP_pdf,yOfxP_pdf)+10e-10,1);
+         output=sum((xP_pdf.*ry.*sum(yOfxP_pdf.*log(phi./yOfxP_pdf)))).*rx;
     end
     %y(x-)
     if NorP==2
@@ -36,13 +34,11 @@ function output = ConditionEntropy(data,f1,f2,NorP)
          for ii=1:c
              yOfxN(ii,1)=data(xN_yIndex(ii),f2);
          end
-         %H(X+)
-         y=data(:,f2);
-         r_y=linspace(mean(y)-5*std(y),mean(y)+5*std(y),300);
-         ry=r_y(2)-r_y(1);
-         r_x=linspace(mean(xN)-5*std(xN),mean(xN)+5*std(xN),300);
-         rx=r_x(2)-r_x(1);
-         output=sum(getPdf(xN).*rx.*sum(getPdf(yOfxN).*log(1./getPdf(yOfxN)))).*ry;
+         [r y_pdf]=getPdf(data(:,f2));
+         [ry yOfxN_pdf]=getPdf(yOfxN);
+         [rx xN_pdf]=getPdf(xN);
+         phi=max(max(xN_pdf,yOfxN_pdf)+10e-10,1);
+         output=sum(xN_pdf.*ry.*sum(yOfxN_pdf.*log(phi./yOfxN_pdf))).*rx;
     end
 end
 
