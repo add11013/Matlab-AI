@@ -27,8 +27,8 @@ load data.csv
          rat1=cdf(pd,0);
          rat2=1-rat1;
          if(i==j)
-            IIM(i,j)=(h_y-h_yOfxP)*rat2+(h_y-h_yOfxN)*rat1;            
-            %IIM(i,j)=0;
+            %IIM(i,j)=(h_y-h_yOfxP)*rat2+(h_y-h_yOfxN)*rat1;            
+            IIM(i,j)=0;
          else
             IIM(i,j)=(h_y-h_yOfxP)*rat2+(h_y-h_yOfxN)*rat1;
             %IIM(i,j)=((h_y-h_yOfxN)+(h_y-h_yOfxP))/2;
