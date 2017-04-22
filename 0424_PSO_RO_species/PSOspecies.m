@@ -69,7 +69,7 @@ end
       PSO.species(k).swarm_size=64;
       for i=1:PSO.species(k).swarm_size
         for ii=1:numberOfParaPerSpecies
-          PSO.species(k).swarm(i).Position(ii)=randn*yMean*1000;
+          PSO.species(k).swarm(i).Position(ii)=randn*yMean*10000;
         end
         PSO.species(k).swarm(i).Velocity(1:numberOfParaPerSpecies)=0;
         PSO.species(k).swarm(i).pBestPosition=PSO.species(k).swarm(i).Position;
