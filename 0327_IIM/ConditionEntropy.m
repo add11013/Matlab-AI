@@ -6,7 +6,7 @@ function output = ConditionEntropy(data,f1,f2,NorP)
     if NorP==1
          c=0;
          for i=1:size(data,1)
-             if data(i,f1)>0
+             if data(i,f1)>=0
                  c=c+1;
                  xP(c,1)=data(i,f1);
                  xP_yIndex(c)=i;
@@ -26,7 +26,7 @@ function output = ConditionEntropy(data,f1,f2,NorP)
     if NorP==2
          c=0;
          for i=1:size(data,1)
-             if data(i,f1)<0
+             if data(i,f1)=<0
                  c=c+1;
                  xN(c,1)=data(i,f1);
                  xN_yIndex(c)=i;     
