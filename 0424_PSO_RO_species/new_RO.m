@@ -54,7 +54,7 @@ end
 
 %% RO parameters
   RO.swarm_size=max(3,4*log10(PrePara+1));
-  RO.iterations=20*PrePara;
+  RO.iterations=20*PrePara*1.3;
   %initialize the particles
   for i=1:RO.swarm_size
     for ii=1:PrePara
@@ -69,14 +69,16 @@ end
 ConsPara=3*length(formationMatrix);
 for i=1:RO.swarm_size
     swarm(i).RLSE.theta(1:ConsPara,1)=0;
-    swarm(i).RLSE.P=1e8*eye(ConsPara);
+    swarm(i).RLSE.P=1e7*eye(ConsPara);
 end
 
 %% main loop
 for ite=1:RO.iterations
     stepsize=max(RO.iterations-ite-15*PrePara)/RO.iterations;
   for i=1:RO.swarm_size
-      swarm(i).Position=RO.gBestPosition+randn*stepsize*yMean*sqrt(PrePara);
+      for iii=1:PrePara
+        swarm(i).Position(iii)=RO.gBestPosition(iii)+randn*stepsize*yMean*sqrt(PrePara);
+      end
       Iteration(ite).beta=[];
         for jj=1:point-2
             %Firing Strength
@@ -182,6 +184,10 @@ end
             A(jj,:)=TMP1;
             output2(jj,1)=A(jj,:)*swarm(gBest).RLSE.theta;  %y
         end
+        for jj=1:testPoint
+            RO.test.e(jj)=(y(jj+point-1)-output2(jj,1))^2;
+        end
+            RO.test.rmse=sqrt(sum(RO.test.e)/(testPoint))
 
         plot(x,output2,'r--');
 

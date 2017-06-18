@@ -2,7 +2,7 @@ clear;
 close all;
 clc;
 tic
-target;
+TAIEX;
 %% substractive clustering
 h1=y(1:point-2);
 h2=y(2:point-1);
