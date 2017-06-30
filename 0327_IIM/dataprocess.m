@@ -1,10 +1,10 @@
+temp=xlsread('Data_set.csv');
+tsmc=temp(:,2);
 
-
-tsmc=xlsread('tsmc.csv');
 NumberOfData=length(tsmc);
-for j=1:31
+for j=1:7
     k=j;
-    for i=1:NumberOfData-31
+    for i=1:NumberOfData-7
         TMP(i,j)=tsmc(k+1)-tsmc(k);
         k=k+1;
     end

@@ -1,6 +1,8 @@
 clear
 clc
-load data.csv
+
+%load data.csv
+data=textread('file1.txt');
 
  for i=1:size(data,2)
      for j=1:size(data,2)
@@ -10,14 +12,15 @@ load data.csv
          h_yOfxP=ConditionEntropy(data,i,j,1);
          %H(Y(X-)) ConditionEntropy: 1 is Positive,2 is Negative
          h_yOfxN=ConditionEntropy(data,i,j,2);
-         c=0;
+         c1=0;
+         c2=0;
          for ii=1:length(data(:,i))
              if data(ii,i)<0
-                 c=c+1;
-                 xN(c,1)=data(ii,i);
+                 c1=c1+1;
+                 xN(c1,1)=data(ii,i);
              else
-                 c=c+1;
-                 xP(c,1)=data(ii,i);
+                 c2=c2+1;
+                 xP(c2,1)=data(ii,i);
              end
          end
          xxx=data(:,i);

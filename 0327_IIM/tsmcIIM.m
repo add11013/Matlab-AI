@@ -2,6 +2,7 @@ clear
 clc
 
 dataprocess
+%data=textread('file1.txt');
 
  for i=1:size(data,2)
      for j=1:size(data,2)
