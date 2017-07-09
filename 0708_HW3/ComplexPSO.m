@@ -57,7 +57,6 @@ for i=1:length(h1Center)
     end
 end
 NumberOfPremiseParameters=(length(h1Center)+length(h2Center))*2;
-NumberOfPremise=(length(h1Center)+length(h2Center));
 
 %% firing strength
 for i=1:NumberOfTrainPoint-2
@@ -88,7 +87,7 @@ if delFor==1
         bye(bb)=[];
     end
 end
-
+NumberOfPremise=length(formationMatrix);
 
 %% PSO parameters
   PSO.w=0.8;
@@ -113,6 +112,7 @@ end
   
 %% RLSE parameters
 NumberOfConsParameters=3*length(formationMatrix);
+NumberOfCons=length(formationMatrix);
 for i=1:PSO.swarm_size
     swarm(i).RLSE.theta(1:NumberOfConsParameters,1)=0;
     swarm(i).RLSE.P=1e9*eye(NumberOfConsParameters);
@@ -162,7 +162,7 @@ for ite=1:PSO.iterations
         for jj=1:NumberOfTrainPoint-2
             swarm(i).yHead(jj,1)=swarm(i).RLSE.A(jj,:)*swarm(i).RLSE.theta;  %y
            %caculate error
-            e(jj,1)=(y(jj+2)-swarm(i).yHead(jj,1))^2;  % target-yHead
+            e(jj,1)=(y(jj+2)-swarm(i).yHead(jj,1))*conj(y(jj+2)-swarm(i).yHead(jj,1));  % target-yHead
         end
       %mse index
         swarm(i).rmse=sqrt(sum(e)/(NumberOfTrainPoint-2));
@@ -239,7 +239,7 @@ end
         for jj=1:NumberOfTestPoint
             PSO.test.e(jj)=(y(jj+NumberOfTrainPoint-1)-output2(jj,1))^2;
         end
-            PSO.test.rmse=sqrt(sum(PSO.test.e)/(NumberOfTestPoint))
+            PSO.test.rmse=sqrt(sum(PSO.test.e)/(NumberOfTestPoint));
         plot(x,output2,'r--');
         plot(x,imag(output2),'r--');
 
