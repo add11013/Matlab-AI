@@ -7,76 +7,66 @@ tic
 temp=xlsread('Data_set.csv');
 %M
 NumberOfINPUT=2;
-%% data1
-DataOfTest=temp(0.7*length(temp):length(temp),1);
-DataOfTrain=temp(1:0.7*length(temp),1);
-
-NumberOfTestPoint=length(DataOfTest);
-NumberOfTrainPoint=length(DataOfTrain);
-NumberOfAllPoint=NumberOfTrainPoint+NumberOfTestPoint;
-
-x=linspace(1,NumberOfAllPoint,NumberOfAllPoint);
-DATA1=[(DataOfTrain(:,1));(DataOfTest(:,1))];
-yMean=mean(DATA1);
-figure(1);
+figure(1)
 hold on
-plot(x,DATA1);
-% substractive clustering
-h1OfDATA1=DATA1(1:NumberOfTrainPoint-2);
-h2OfDATA1=DATA1(2:NumberOfTrainPoint-1);
-h1CenterOfDATA1=subclust(h1OfDATA1,0.29);
-h2CenterOfDATA1=subclust(h2OfDATA1,0.29);
+for M=1:NumberOfINPUT
+    DataOfTest=temp(0.7*length(temp):length(temp),M);
+    DataOfTrain=temp(1:0.7*length(temp),M);
+    NumberOfTestPoint=length(DataOfTest);
+    NumberOfTrainPoint=length(DataOfTrain);
+    NumberOfAllPoint=NumberOfTrainPoint+NumberOfTestPoint;
+    x=linspace(1,NumberOfAllPoint,NumberOfAllPoint);
+    h(M).value=[(DataOfTrain(:,1));(DataOfTest(:,1))];
+    % substractive clustering
+    h(M).center=subclust(h(M).value,0.3);
+    plot(x,h(M).value)
+end
 
-%% data2
-DataOfTest=temp(0.7*length(temp):length(temp),2);
-DataOfTrain=temp(1:0.7*length(temp),2);
-
-x=linspace(1,NumberOfAllPoint,NumberOfAllPoint);
-DATA2=[(DataOfTrain(:,1));(DataOfTest(:,1))];
-yMean=mean(DATA2);
-plot(x,DATA2);
-% substractive clustering
-h1OfDATA2=DATA2(1:NumberOfTrainPoint-2);
-h2OfDATA2=DATA2(2:NumberOfTrainPoint-1);
-h1CenterOfDATA2=subclust(h1OfDATA2,0.29);
-h2CenterOfDATA2=subclust(h2OfDATA2,0.29);
+TMP0=[];
+for M=1:NumberOfINPUT
+    TMP=h(M).value;
+    TMP0=[TMP0;TMP];
+end
+TotalINPUT=TMP0;
+TotalINPUTMean=mean(TotalINPUT);
+ConsCenter=subclust(TotalINPUT,0.1);
+ConsStd=std(TotalINPUT);
+NumberOfCons=length(ConsCenter);
 
 %% combine DATA
-h1=DATA1(1:NumberOfTrainPoint-2)+j*DATA2(1:NumberOfTrainPoint-2);
-h2=DATA1(2:NumberOfTrainPoint-1)+j*DATA2(2:NumberOfTrainPoint-1);
-h1Center=h1CenterOfDATA1+j*h1CenterOfDATA2;
-h2Center=h2CenterOfDATA1+j*h2CenterOfDATA2;
-y(1).value=DATA1+j*DATA2;
-y(1).std=std(y(1).value);
-y(1).mean=mean(y(1).value);
+h1=h(1).value(1:NumberOfTrainPoint);
+h2=h(2).value(1:NumberOfTrainPoint);
 
+y(1).value=h1+j*h2;
+%y(1).mean=mean(y(1).value);
+%y(1).std=std(y(1).value);
+y(1).mean=mean(h1+h2)/2;
+y(1).std=std(TotalINPUT);
+%% Consequences
+        for N=1:1
+            for Q=1:NumberOfCons
+                C(N).q(Q)=ConsCenter(Q);
+                S(N).q(Q)=ConsStd;
+            end
+        end
 %% formation matrix
 count=1;
-for i=1:length(h1Center)
-    for ii=1:length(h2Center)
+for i=1:length(h(1).center)
+    for ii=1:length(h(2).center)
         formationMatrix(count,1)=i;
         formationMatrix(count,2)=ii;
         count=count+1;
     end
 end
-NumberOfPremiseParameters=(length(h1Center)+length(h2Center))*2;
+NumberOfPremiseParameters=(length(h(1).center)+length(h(2).center))*2;
 
 %% firing strength
-for i=1:NumberOfTrainPoint-2
+for jj=1:NumberOfTrainPoint-2
     for rule=1:length(formationMatrix)
-        BetaOfFormationMatrix(rule,i)=gaussmf(h1(i),[h1Center(formationMatrix(rule,1)),std(h1)],1)*gaussmf(h2(i),[h2Center(formationMatrix(rule,2)),std(h2)],1);
+        BetaOfFormationMatrix(rule,jj)=gaussmf(h1(jj),[h(1).center(formationMatrix(rule,1)),std(h1)],1)*gaussmf(h2(jj),[h(2).center(formationMatrix(rule,2)),std(h2)],1);
     end
 end
-%% Consequences
-        for N=1:1
-            ConsCenterReal=subclust(real(y(N).value),0.29);
-            ConsCenterImag=subclust(imag(y(N).value),0.29);
-            NumberOfCons=length(ConsCenterReal);
-            for Q=1:NumberOfCons
-                C(N).q(Q)=ConsCenterReal(Q)+j*ConsCenterImag(Q);
-                S(N).q(Q)=y(N).std;
-            end
-        end
+
 %% cube selection
 bb=1;
 delFor=0;
@@ -100,7 +90,6 @@ if delFor==1
     end
 end
 NumberOfPremise=length(formationMatrix);
-
 %% PSO parameters
   PSO.w=0.8;
   PSO.c1=2;
@@ -108,11 +97,11 @@ NumberOfPremise=length(formationMatrix);
   PSO.s1=rand(1);
   PSO.s2=rand(1);
   PSO.swarm_size=64;
-  PSO.iterations=20;
+  PSO.iterations=10;
   %initialize the particles
   for i=1:PSO.swarm_size
     for ii=1:NumberOfPremiseParameters
-      swarm(i).Position(ii)=randn*yMean*1000+j*randn*yMean*1000;
+      swarm(i).Position(ii)=randn*TotalINPUTMean*1000;
     end
     swarm(i).Velocity(1:NumberOfPremiseParameters)=0;
     swarm(i).pBestPosition=swarm(i).Position;
@@ -125,7 +114,7 @@ NumberOfPremise=length(formationMatrix);
 %% RLSE parameters
 for i=1:PSO.swarm_size
     swarm(i).RLSE.theata(1:(NumberOfINPUT+1)*NumberOfCons,1)=0;
-    swarm(i).RLSE.P=1e6*eye((NumberOfINPUT+1)*NumberOfCons);
+    swarm(i).RLSE.P=1e10*eye((NumberOfINPUT+1)*NumberOfCons);
 end
 
 %% main loop
@@ -137,21 +126,20 @@ for ite=1:PSO.iterations
         for jj=1:NumberOfTrainPoint-2
             %Firing Strength
             j1=1;
-            for number=1:NumberOfPremiseParameters/4
-                termSet{1}(number)={[swarm(i).Position(j1:j1+1)]};
-                j1=j1+2;
+            for M=1:NumberOfINPUT
+                for number=1:NumberOfPremiseParameters/4
+                    termSet{M}(number)={[swarm(i).Position(j1:j1+1)]};
+                    j1=j1+2;
+                end
             end
-            for number=1:NumberOfPremiseParameters/4
-                termSet{2}(number)={swarm(i).Position(j1:j1+1)};
-                j1=j1+2;
-            end
+
             for rule=1:length(formationMatrix)
                 r1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},1);
                 r2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},1);
                 theata1Ofh1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},3);
-                theata2Ofh1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},2);
+                theata2Ofh1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},6);
                 theata1Ofh2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},3);
-                theata2Ofh2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},2);               
+                theata2Ofh2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},6);               
                 Iteration(ite).beta(rule,jj)=r1*exp(j*(theata1Ofh1+theata2Ofh1))*r2*exp(j*(theata1Ofh2+theata2Ofh2));
             end
         end
@@ -160,18 +148,18 @@ for ite=1:PSO.iterations
         end
 
         for N=1:1
-            for K=1:NumberOfPremise
-                    for Q=1:NumberOfCons
-                        aocC(N).q(Q)=exp(-(C(N).q(Q)-y(N).mean)*conj(C(N).q(Q)-y(N).mean)/(2*y(N).std*conj(y(N).std)))  *exp(j*exp(-(C(N).q(Q)-y(N).mean)*conj(C(N).q(Q)-y(N).mean)  /(2*y(N).std*conj(y(N).std)))* (-(C(N).q(Q)-y(N).mean)/(y(N).std*conj(y(N).std))));
-                        aocS(N).q(Q)=exp(-(S(N).q(Q)*conj(S(N).q(Q)))/(2*y(N).std*conj(y(N).std)))*exp(j*exp(-(S(N).q(Q)*conj(S(N).q(Q)))/(2*y(N).std))  *(-S(N).q(Q)*conj(S(N).q(Q)))/(y(N).std*conj(y(N).std)));
-                        f1=exp(-(B(N).k(K).value-aocC(N).q(Q)).*conj(B(N).k(K).value-aocC(N).q(Q))./(2.*aocS(N).q(Q).*conj(aocS(N).q(Q))));
-                        lambda(N).k(K).q(Q).value=f1.*exp(j.*f1.*-(B(N).k(K).value-aocC(N).q(Q))./(((aocS(N).q(Q)).*conj((aocS(N).q(Q))))));
+            for Q=1:NumberOfCons
+                        aocC(N).q(Q)=exp(-(C(N).q(Q)-y(N).mean)^2/(2*y(N).std^2))  *exp(j*exp(-(C(N).q(Q)-y(N).mean)^2 /(2*y(N).std^2))* (-(C(N).q(Q)-y(N).mean)/(y(N).std^2)));
+                        aocS(N).q(Q)=exp(-(S(N).q(Q)^2)/(2*y(N).std^2))*exp(j*exp(-(S(N).q(Q)^2)/(2*y(N).std^2))  *(-S(N).q(Q))/(y(N).std^2));
+                    for K=1:NumberOfPremise
+                         f1=exp(-(B(N).k(K).value-aocC(N).q(Q)).*conj(B(N).k(K).value-aocC(N).q(Q))./(2.*aocS(N).q(Q).*conj(aocS(N).q(Q))));
+                         lambda(N).k(K).q(Q).value=f1.*exp(j.*f1.*-(B(N).k(K).value-aocC(N).q(Q))./(((aocS(N).q(Q)).*conj((aocS(N).q(Q))))));
                     end
             end
         end
 
         for jj=1:NumberOfTrainPoint-2
-            for Q=1:3
+            for Q=1:NumberOfCons
                 %CaculateB
                 BOfLambdaTMP0=[];
                 for N=1:1
@@ -202,7 +190,7 @@ for ite=1:PSO.iterations
                 HOfLambdaTMP0=[];
                 for N=1:1
                     TMP0=[1];
-                    TMP=[y(N).value(jj) y(N).value(jj+1)];
+                    TMP=[h1(jj) h2(jj)];
                     TMP0=[TMP0 TMP];
                     HOfLambdaTMP=[TMP0];
                     HOfLambdaTMP0=[HOfLambdaTMP0;HOfLambdaTMP];
@@ -213,7 +201,7 @@ for ite=1:PSO.iterations
             end
         end
         TMP0=[];
-        for Q=1:3
+        for Q=1:NumberOfCons
             TMP=P.q(Q).value;
             TMP0=[TMP0 TMP];
         end
