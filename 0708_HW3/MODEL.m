@@ -2,46 +2,78 @@ clear
 close all;
 clc
 tic
-
-%data prepare
-temp=xlsread('Data_set.csv');
-%M
-NumberOfINPUT=2;
-figure(1)
-hold on
-for M=1:NumberOfINPUT
-    DataOfTest=temp(0.7*length(temp):length(temp),M);
-    DataOfTrain=temp(1:0.7*length(temp),M);
-    NumberOfTestPoint=length(DataOfTest);
-    NumberOfTrainPoint=length(DataOfTrain);
-    NumberOfAllPoint=NumberOfTrainPoint+NumberOfTestPoint;
-    x=linspace(1,NumberOfAllPoint,NumberOfAllPoint);
-    h(M).value=[(DataOfTrain(:,1));(DataOfTest(:,1))];
-    % substractive clustering
-    h(M).center=subclust(h(M).value,0.3);
-    plot(x,h(M).value)
+OriginalData=xlsread('Data_set.csv');
+FeatureIndex=FeatureSelection(OriginalData);
+%% get  Training data
+%NumberOfTarget指的是實數型態的目標個數
+NumberOfTarget=size(OriginalData,2);
+for t=1:NumberOfTarget
+    tsmc=OriginalData(:,t);
+    LengthOfData=length(tsmc);
+    Updown=31;
+    for jj=1:Updown-1
+        k=jj;
+        for i=1:LengthOfData-Updown
+            TMP(i,jj)=tsmc(k);
+            k=k+1;
+        end
+    end
+    data(t).value=TMP;
 end
 
+AllData=[ ];
+%data.value最後一行是目標不用取，所以取1:Updown-1
+for t=1:NumberOfTarget
+    TMP=data(t).value(:,1:Updown-1);
+    AllData=[AllData TMP];
+end
+
+%get h1~hM
+for M=1:length(FeatureIndex)
+    h(M).value=AllData(:,FeatureIndex(M));
+    % substractive clustering for premise fuzzysets
+    h(M).center=subclust(h(M).value,0.3);
+    h(M).std=std(h(M).value);
+end
+figure(1)
+hold on
+%% prepare target
+NumberOfINPUT=length(h);
+%NumberOfOUTPUT是指複數型態目標的個數，所以為實數型態除以2
+NumberOfOUTPUT=NumberOfTarget/2;
+k=1;
+for N=1:NumberOfOUTPUT
+    realPart=OriginalData(Updown+1:length(OriginalData),k);
+    imgPart=OriginalData(Updown+1:length(OriginalData),k+1);
+    x=linspace(1,length(realPart),length(realPart));
+    plot(x,realPart);
+    plot(x,imgPart);
+    k=k+2;
+    
+    y(N).value=realPart+imgPart*j;
+end
+
+
+%% caculate NumberOfCons
 TMP0=[];
 for M=1:NumberOfINPUT
     TMP=h(M).value;
     TMP0=[TMP0;TMP];
 end
 TotalINPUT=TMP0;
-TotalINPUTMean=mean(TotalINPUT);
-ConsCenter=subclust(TotalINPUT,0.1);
-ConsStd=std(TotalINPUT);
-NumberOfCons=length(ConsCenter);
+TotalINPUTMean=mean(TotalINPUT); 
+%Number Of Consequence
+NumberOfCons=length(subclust(TotalINPUT,0.1));
 
 %% combine DATA
 h1=h(1).value(1:NumberOfTrainPoint);
 h2=h(2).value(1:NumberOfTrainPoint);
 
 y(1).value=h1+j*h2;
-%y(1).mean=mean(y(1).value);
-%y(1).std=std(y(1).value);
-y(1).mean=mean(h1+h2)/2;
-y(1).std=std(TotalINPUT);
+ConsCenter=fcm(y(1).value,NumberOfCons);
+ConsStd=std(y(1).value);
+y(1).mean=mean(y(1).value);
+y(1).std=std(y(1).value);
 %% Consequences
         for N=1:1
             for Q=1:NumberOfCons
@@ -97,11 +129,16 @@ NumberOfPremise=length(formationMatrix);
   PSO.s1=rand(1);
   PSO.s2=rand(1);
   PSO.swarm_size=64;
-  PSO.iterations=10;
+  PSO.iterations=80;
   %initialize the particles
   for i=1:PSO.swarm_size
-    for ii=1:NumberOfPremiseParameters
-      swarm(i).Position(ii)=randn*TotalINPUTMean*1000;
+    j1=1;
+    for M=1:NumberOfINPUT
+        for ii=1:length(h(M).center)
+            swarm(i).Position(j1)=randn*h(M).center(ii);
+            swarm(i).Position(j1+1)=randn*std(h(M).value);
+            j1=j1+2;
+        end
     end
     swarm(i).Velocity(1:NumberOfPremiseParameters)=0;
     swarm(i).pBestPosition=swarm(i).Position;
@@ -112,10 +149,8 @@ NumberOfPremise=length(formationMatrix);
   
   
 %% RLSE parameters
-for i=1:PSO.swarm_size
-    swarm(i).RLSE.theata(1:(NumberOfINPUT+1)*NumberOfCons,1)=0;
-    swarm(i).RLSE.P=1e10*eye((NumberOfINPUT+1)*NumberOfCons);
-end
+        theata0(1:(NumberOfINPUT+1)*NumberOfCons,1)=0;%
+        P0=1e10*eye((NumberOfINPUT+1)*NumberOfCons);
 
 %% main loop
 for ite=1:PSO.iterations
@@ -127,7 +162,7 @@ for ite=1:PSO.iterations
             %Firing Strength
             j1=1;
             for M=1:NumberOfINPUT
-                for number=1:NumberOfPremiseParameters/4
+                for number=1:length(h(M).center)
                     termSet{M}(number)={[swarm(i).Position(j1:j1+1)]};
                     j1=j1+2;
                 end
@@ -149,7 +184,7 @@ for ite=1:PSO.iterations
 
         for N=1:1
             for Q=1:NumberOfCons
-                        aocC(N).q(Q)=exp(-(C(N).q(Q)-y(N).mean)^2/(2*y(N).std^2))  *exp(j*exp(-(C(N).q(Q)-y(N).mean)^2 /(2*y(N).std^2))* (-(C(N).q(Q)-y(N).mean)/(y(N).std^2)));
+                        aocC(N).q(Q)=exp(-(C(N).q(Q)-y(N).mean)^2/(2*y(N).std^2))  *exp(j*exp(-(C(N).q(Q)-y(N).mean)^2/(2*y(N).std^2))* (-(C(N).q(Q)-y(N).mean)/(y(N).std^2)));
                         aocS(N).q(Q)=exp(-(S(N).q(Q)^2)/(2*y(N).std^2))*exp(j*exp(-(S(N).q(Q)^2)/(2*y(N).std^2))  *(-S(N).q(Q))/(y(N).std^2));
                     for K=1:NumberOfPremise
                          f1=exp(-(B(N).k(K).value-aocC(N).q(Q)).*conj(B(N).k(K).value-aocC(N).q(Q))./(2.*aocS(N).q(Q).*conj(aocS(N).q(Q))));
@@ -197,7 +232,7 @@ for ite=1:PSO.iterations
                 end
                 HOfLambda=HOfLambdaTMP0;
                 
-                P.q(Q).value(jj,:)=[BOfLambda*LOfLambda*HOfLambda];  
+                P.q(Q).value(jj,:)=[BOfLambda*LOfLambda*HOfLambda];
             end
         end
         TMP0=[];
@@ -215,22 +250,43 @@ for ite=1:PSO.iterations
 %              swarm(i).RLSE.A(jj,:)=TMP0;
 %         end
         b=transpose(swarm(i).RLSE.A);
-        for k=0:(NumberOfTrainPoint-2)-1
-            swarm(i).RLSE.P=swarm(i).RLSE.P-(swarm(i).RLSE.P*b(:,k+1)*transpose(b(:,k+1))*swarm(i).RLSE.P)/(1+transpose(b(:,k+1))*swarm(i).RLSE.P*b(:,k+1));
-            swarm(i).RLSE.theata=swarm(i).RLSE.theata+swarm(i).RLSE.P*b(:,k+1)*(y(1).value(k+3)-transpose(b(:,k+1))*swarm(i).RLSE.theata);
+        
+        for k=1:(NumberOfTrainPoint-2)
+            if(k==1)
+                swarm(i).RLSE.iteration(k).P=P0-(P0*b(:,k)*transpose(b(:,k))*P0)/(1+transpose(b(:,k))*P0*b(:,k));
+                swarm(i).RLSE.iteration(k).theata=theata0+swarm(i).RLSE.iteration(k).P*b(:,k)*(y(1).value(k+2)-transpose(b(:,k))*theata0);
+            else
+                swarm(i).RLSE.iteration(k).P=swarm(i).RLSE.iteration(k-1).P-(swarm(i).RLSE.iteration(k-1).P*b(:,k)*transpose(b(:,k))*swarm(i).RLSE.iteration(k-1).P)/(1+transpose(b(:,k))*swarm(i).RLSE.iteration(k-1).P*b(:,k));
+                swarm(i).RLSE.iteration(k).theata=swarm(i).RLSE.iteration(k-1).theata+swarm(i).RLSE.iteration(k).P*b(:,k)*(y(1).value(k+2)-transpose(b(:,k))*swarm(i).RLSE.iteration(k-1).theata);
+            end
         end
+        
+        %bbb  98*12
+%         p=eye(9)
+%         p_0=1e7*p;
+%         q_0=zeros(9,1);
+%         for k=1:row
+%             if(k==1)
+%                 RLSE(k).p=p_0-(p_0*bbb(k,:)'*bbb(k,:)*p_0)/(1+bbb(k,:)*p_0*bbb(k,:)'');
+%                 RLSE(k).q=q_0+RLSE(k).p*bbb(k,:)'*(OutputMatrix(k,1)-bbb(k,:)*q_0);
+%             else
+%                 RLSE(k).p=RLSE(k-1).p-(RLSE(k-1).p*bbb(k,:)'*bbb(k,:)*RLSE(k-1).p)/(1+bbb(k,:)*RLSE(k-1).p*bbb(k,:)');
+%                 RSLE(k).q=RLSE(k-1).q+RLSE(k).p*bbb(k,:)'*(OutputMatrix(k,1)-bbb(k,:)*RLSE(k-1).q);
+%             end
+%         end
+%         
       %new_yHead(output)
         for jj=1:NumberOfTrainPoint-2
-            swarm(i).yHead(jj,1)=swarm(i).RLSE.A(jj,:)*swarm(i).RLSE.theata;  %y
+            swarm(i).yHead(jj,1)=swarm(i).RLSE.A(jj,:)*swarm(i).RLSE.iteration(k).theata;  %y
            %caculate error
             e(jj,1)=(y(1).value(jj+2)-swarm(i).yHead(jj,1))*conj(y(1).value(jj+2)-swarm(i).yHead(jj,1));  % target-yHead
         end
-      %mse index
+      %rmse index
         swarm(i).rmse=sqrt(sum(e)/(NumberOfTrainPoint-2));
       %pbest
         if swarm(i).rmse<swarm(i).pBestDistance
             swarm(i).pBestPosition=swarm(i).Position;        %update pbest position
-            swarm(i).pBestDistance=swarm(i).rmse;            %update pbest pbest mse index
+            swarm(i).pBestDistance=swarm(i).rmse;            %update pbest rmse index
         end
       %gbest
         if swarm(i).rmse<PSO.gBestDistance
@@ -240,7 +296,7 @@ for ite=1:PSO.iterations
         end
 
       %update velocity
-      swarm(i).Velocity=PSO.w*swarm(i).Velocity+PSO.c1*PSO.s1*(swarm(i).pBestPosition-swarm(i).Position)+PSO.c2*PSO.s2*(PSO.gBestPosition-swarm(i).Position);
+      swarm(i).Velocity=PSO.w*swarm(i).Velocity+PSO.c1*PSO.s1*(swarm(i).pBestPosition-swarm(i).Position)+PSO.c2*PSO.s2*(swarm(gBest).Position-swarm(i).Position);
   end
   PSO.plotRMSE(ite) = PSO.gBestDistance;
   ite
@@ -259,10 +315,21 @@ end
           legend('Learning Curve');
           xlabel('iterations');
           ylabel('rmse');
+      for i=1:PSO.swarm_size
+          finalRMSE(i)=swarm(i).rmse;
+      end
+      gBestRMSE=1e10;
+      for i=1:PSO.swarm_size
+        if finalRMSE(i)<gBestRMSE
+            gBest=i;
+            gBestRMSE=finalRMSE(i);
+        end
+      end
       figure(1);
         x=linspace(x(3),x(NumberOfTrainPoint),NumberOfTrainPoint-2);
         plot(x,real(swarm(gBest).yHead),'--');
         plot(x,imag(swarm(gBest).yHead),'--');
+        toc
 %% test
 testy(1).std=std(y(1).value(NumberOfTrainPoint+1:NumberOfAllPoint));
 testy(1).mean=mean(y(1).value(NumberOfTrainPoint+1:NumberOfAllPoint));
