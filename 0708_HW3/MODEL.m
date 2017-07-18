@@ -35,6 +35,7 @@ for M=1:length(FeatureIndex)
     h(M).center=subclust(h(M).value,0.3);
     h(M).std=std(h(M).value);
 end
+NumberOfTrainPoint=length(h(1).value);
 figure(1)
 hold on
 %% prepare target
@@ -61,41 +62,63 @@ for M=1:NumberOfINPUT
     TMP0=[TMP0;TMP];
 end
 TotalINPUT=TMP0;
-TotalINPUTMean=mean(TotalINPUT); 
 %Number Of Consequence
-NumberOfCons=length(subclust(TotalINPUT,0.1));
+NumberOfCons=length(subclust(TotalINPUT,0.3));
 
-%% combine DATA
-h1=h(1).value(1:NumberOfTrainPoint);
-h2=h(2).value(1:NumberOfTrainPoint);
+%% Cons. fuzzyset parameters
+for N=1:NumberOfOUTPUT
+    ConsCenter=fcm(y(N).value,NumberOfCons);
+    ConsStd=std(y(N).value);
+    y(N).mean=mean(y(N).value);
+    y(N).std=std(y(N).value);
+end
 
-y(1).value=h1+j*h2;
-ConsCenter=fcm(y(1).value,NumberOfCons);
-ConsStd=std(y(1).value);
-y(1).mean=mean(y(1).value);
-y(1).std=std(y(1).value);
 %% Consequences
-        for N=1:1
+        for N=1:NumberOfOUTPUT
             for Q=1:NumberOfCons
                 C(N).q(Q)=ConsCenter(Q);
                 S(N).q(Q)=ConsStd;
             end
         end
 %% formation matrix
-count=1;
-for i=1:length(h(1).center)
-    for ii=1:length(h(2).center)
-        formationMatrix(count,1)=i;
-        formationMatrix(count,2)=ii;
-        count=count+1;
+NumberOfRule=1;
+for M=1:NumberOfINPUT
+    NumberOfRule=NumberOfRule*length(h(M).center);
+end
+xxx=1;
+yyy=NumberOfRule;
+for M=1:NumberOfINPUT
+    count=1;
+    xxx=xxx*length(h(M).center);
+    yyy=yyy/length(h(M).center);
+    for i=1:xxx
+        for ii=1:yyy
+            if mod(i,length(h(M).center))==0
+                k=length(h(M).center);
+            else
+                k=mod(i,length(h(M).center));
+            end
+            formationMatrix(count,M)=k;
+            count=count+1;
+        end
     end
 end
-NumberOfPremiseParameters=(length(h(1).center)+length(h(2).center))*2;
+
+% caculate Number Of Premise Parameters
+NumberOfPremiseParameters=0;
+for M=1:NumberOfINPUT
+    NumberOfPremiseParameters=NumberOfPremiseParameters+length(h(M).center)*2;
+end
 
 %% firing strength
-for jj=1:NumberOfTrainPoint-2
+for jj=1:NumberOfTrainPoint
     for rule=1:length(formationMatrix)
-        BetaOfFormationMatrix(rule,jj)=gaussmf(h1(jj),[h(1).center(formationMatrix(rule,1)),std(h1)],1)*gaussmf(h2(jj),[h(2).center(formationMatrix(rule,2)),std(h2)],1);
+        membership=1;
+        for M=1:NumberOfINPUT
+            temp=gaussmf(h(M).value(jj),[h(M).center(formationMatrix(rule,M)),h(M).std],1);
+            membership=membership*temp;
+            BetaOfFormationMatrix(rule,jj)=membership;
+        end
     end
 end
 
@@ -103,7 +126,7 @@ end
 bb=1;
 delFor=0;
 for rule=1:length(formationMatrix)
-    treshold=0.3*std(reshape(BetaOfFormationMatrix,length(formationMatrix)*(NumberOfTrainPoint-2),1));
+    treshold=0.3*std(reshape(BetaOfFormationMatrix,length(formationMatrix)*(NumberOfTrainPoint),1));
     if std(BetaOfFormationMatrix(rule,:))<treshold
         bye(bb)=rule;
         bb=bb+1;
@@ -115,13 +138,16 @@ if delFor==1
     i=bye(bb);
     formationMatrix(i,:)=[];
     bye(bb)=[];
+    k=1;
     while length(bye)~=0
         i=bye(bb);
-        formationMatrix(i-1,:)=[];
+        formationMatrix(i-k,:)=[];
+        k=k+1;
         bye(bb)=[];
     end
 end
 NumberOfPremise=length(formationMatrix);
+
 %% PSO parameters
   PSO.w=0.8;
   PSO.c1=2;
@@ -129,14 +155,14 @@ NumberOfPremise=length(formationMatrix);
   PSO.s1=rand(1);
   PSO.s2=rand(1);
   PSO.swarm_size=64;
-  PSO.iterations=80;
+  PSO.iterations=30;
   %initialize the particles
   for i=1:PSO.swarm_size
     j1=1;
     for M=1:NumberOfINPUT
         for ii=1:length(h(M).center)
             swarm(i).Position(j1)=randn*h(M).center(ii);
-            swarm(i).Position(j1+1)=randn*std(h(M).value);
+            swarm(i).Position(j1+1)=randn*h(M).std;
             j1=j1+2;
         end
     end
@@ -158,7 +184,7 @@ for ite=1:PSO.iterations
       %move
       swarm(i).Position=swarm(i).Position+swarm(i).Velocity;
       Iteration(ite).beta=[];
-        for jj=1:NumberOfTrainPoint-2
+        for jj=1:NumberOfTrainPoint
             %Firing Strength
             j1=1;
             for M=1:NumberOfINPUT
@@ -168,21 +194,32 @@ for ite=1:PSO.iterations
                 end
             end
 
+%             for rule=1:length(formationMatrix)
+%                 r1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},1);
+%                 r2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},1);
+%                 theata1Ofh1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},3);
+%                 theata2Ofh1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},6);
+%                 theata1Ofh2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},3);
+%                 theata2Ofh2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},6);               
+%                 Iteration(ite).beta(rule,jj)=r1*exp(j*(theata1Ofh1+theata2Ofh1))*r2*exp(j*(theata1Ofh2+theata2Ofh2));
+%             end
             for rule=1:length(formationMatrix)
-                r1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},1);
-                r2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},1);
-                theata1Ofh1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},3);
-                theata2Ofh1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},6);
-                theata1Ofh2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},3);
-                theata2Ofh2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},6);               
-                Iteration(ite).beta(rule,jj)=r1*exp(j*(theata1Ofh1+theata2Ofh1))*r2*exp(j*(theata1Ofh2+theata2Ofh2));
+                membership=1;
+                for M=1:NumberOfINPUT
+                    r=gaussmf(h(M).value(jj),termSet{M}{formationMatrix(rule,M)},1);
+                    theata1Ofh=gaussmf(h(M).value(jj),termSet{M}{formationMatrix(rule,M)},3); %dr/dx
+                    theata2Ofh=gaussmf(h(M).value(jj),termSet{M}{formationMatrix(rule,M)},6); %d2r/dx^2
+                    temp=r*exp(j*(theata1Ofh+theata2Ofh));
+                    membership=membership*temp;
+                    Iteration(ite).beta(rule,jj)=membership;
+                end
             end
         end
         for K=1:NumberOfPremise
             B(1).k(K).value=Iteration(ite).beta(K,:);
         end
 
-        for N=1:1
+        for N=1:NumberOfOUTPUT
             for Q=1:NumberOfCons
                         aocC(N).q(Q)=exp(-(C(N).q(Q)-y(N).mean)^2/(2*y(N).std^2))  *exp(j*exp(-(C(N).q(Q)-y(N).mean)^2/(2*y(N).std^2))* (-(C(N).q(Q)-y(N).mean)/(y(N).std^2)));
                         aocS(N).q(Q)=exp(-(S(N).q(Q)^2)/(2*y(N).std^2))*exp(j*exp(-(S(N).q(Q)^2)/(2*y(N).std^2))  *(-S(N).q(Q))/(y(N).std^2));
@@ -193,11 +230,11 @@ for ite=1:PSO.iterations
             end
         end
 
-        for jj=1:NumberOfTrainPoint-2
+        for jj=1:NumberOfTrainPoint
             for Q=1:NumberOfCons
                 %CaculateB
                 BOfLambdaTMP0=[];
-                for N=1:1
+                for N=1:NumberOfOUTPUT
                     TMP0=[];
                     for K=1:NumberOfPremise
                         TMP=[B(N).k(K).value(jj)];
@@ -223,10 +260,12 @@ for ite=1:PSO.iterations
                 
                 %CaculateH
                 HOfLambdaTMP0=[];
-                for N=1:1
+                for N=1:NumberOfOUTPUT
                     TMP0=[1];
-                    TMP=[h1(jj) h2(jj)];
-                    TMP0=[TMP0 TMP];
+                    for M=1:NumberOfINPUT
+                        TMP=h(M).value(jj);
+                        TMP0=[TMP0 TMP];
+                    end
                     HOfLambdaTMP=[TMP0];
                     HOfLambdaTMP0=[HOfLambdaTMP0;HOfLambdaTMP];
                 end
@@ -250,14 +289,15 @@ for ite=1:PSO.iterations
 %              swarm(i).RLSE.A(jj,:)=TMP0;
 %         end
         b=transpose(swarm(i).RLSE.A);
-        
-        for k=1:(NumberOfTrainPoint-2)
-            if(k==1)
-                swarm(i).RLSE.iteration(k).P=P0-(P0*b(:,k)*transpose(b(:,k))*P0)/(1+transpose(b(:,k))*P0*b(:,k));
-                swarm(i).RLSE.iteration(k).theata=theata0+swarm(i).RLSE.iteration(k).P*b(:,k)*(y(1).value(k+2)-transpose(b(:,k))*theata0);
-            else
-                swarm(i).RLSE.iteration(k).P=swarm(i).RLSE.iteration(k-1).P-(swarm(i).RLSE.iteration(k-1).P*b(:,k)*transpose(b(:,k))*swarm(i).RLSE.iteration(k-1).P)/(1+transpose(b(:,k))*swarm(i).RLSE.iteration(k-1).P*b(:,k));
-                swarm(i).RLSE.iteration(k).theata=swarm(i).RLSE.iteration(k-1).theata+swarm(i).RLSE.iteration(k).P*b(:,k)*(y(1).value(k+2)-transpose(b(:,k))*swarm(i).RLSE.iteration(k-1).theata);
+        for N=1:NumberOfOUTPUT
+            for k=1:(NumberOfTrainPoint)
+                if(k==1)
+                    swarm(i).RLSE.iteration(k).P=P0-(P0*b(:,k)*transpose(b(:,k))*P0)/(1+transpose(b(:,k))*P0*b(:,k));
+                    swarm(i).RLSE.iteration(k).theata=theata0+swarm(i).RLSE.iteration(k).P*b(:,k)*(y(N).value(k)-transpose(b(:,k))*theata0);
+                else
+                    swarm(i).RLSE.iteration(k).P=swarm(i).RLSE.iteration(k-1).P-(swarm(i).RLSE.iteration(k-1).P*b(:,k)*transpose(b(:,k))*swarm(i).RLSE.iteration(k-1).P)/(1+transpose(b(:,k))*swarm(i).RLSE.iteration(k-1).P*b(:,k));
+                    swarm(i).RLSE.iteration(k).theata=swarm(i).RLSE.iteration(k-1).theata+swarm(i).RLSE.iteration(k).P*b(:,k)*(y(N).value(k)-transpose(b(:,k))*swarm(i).RLSE.iteration(k-1).theata);
+                end
             end
         end
         
@@ -276,13 +316,15 @@ for ite=1:PSO.iterations
 %         end
 %         
       %new_yHead(output)
-        for jj=1:NumberOfTrainPoint-2
+      for N=1:NumberOfOUTPUT
+        for jj=1:NumberOfTrainPoint
             swarm(i).yHead(jj,1)=swarm(i).RLSE.A(jj,:)*swarm(i).RLSE.iteration(k).theata;  %y
            %caculate error
-            e(jj,1)=(y(1).value(jj+2)-swarm(i).yHead(jj,1))*conj(y(1).value(jj+2)-swarm(i).yHead(jj,1));  % target-yHead
+            e(jj,N)=(y(N).value(jj)-swarm(i).yHead(jj,1))*conj(y(N).value(jj)-swarm(i).yHead(jj,1));  % target-yHead
         end
+      end
       %rmse index
-        swarm(i).rmse=sqrt(sum(e)/(NumberOfTrainPoint-2));
+        swarm(i).rmse=sqrt(sum(e(:,N))/(NumberOfTrainPoint));
       %pbest
         if swarm(i).rmse<swarm(i).pBestDistance
             swarm(i).pBestPosition=swarm(i).Position;        %update pbest position
@@ -298,7 +340,7 @@ for ite=1:PSO.iterations
       %update velocity
       swarm(i).Velocity=PSO.w*swarm(i).Velocity+PSO.c1*PSO.s1*(swarm(i).pBestPosition-swarm(i).Position)+PSO.c2*PSO.s2*(swarm(gBest).Position-swarm(i).Position);
   end
-  PSO.plotRMSE(ite) = PSO.gBestDistance;
+  PSO.plotRMSE(ite) = PSO.gBestDistance
   ite
 end
 
@@ -326,127 +368,9 @@ end
         end
       end
       figure(1);
-        x=linspace(x(3),x(NumberOfTrainPoint),NumberOfTrainPoint-2);
+        x=linspace(1,NumberOfTrainPoint,NumberOfTrainPoint);
         plot(x,real(swarm(gBest).yHead),'--');
         plot(x,imag(swarm(gBest).yHead),'--');
+        legend('IBM','TSMC','OUTPUT1-real','OUTPUT1-imag')
         toc
-%% test
-testy(1).std=std(y(1).value(NumberOfTrainPoint+1:NumberOfAllPoint));
-testy(1).mean=mean(y(1).value(NumberOfTrainPoint+1:NumberOfAllPoint));
-        for N=1:1
-            ConsCenterReal=subclust(real(y(N).value(NumberOfTrainPoint+1:NumberOfAllPoint)),0.29);
-            ConsCenterImag=subclust(imag(y(N).value(NumberOfTrainPoint+1:NumberOfAllPoint)),0.29);
-            NumberOfCons=length(ConsCenterReal);
-            for Q=1:NumberOfCons
-                C(N).q(Q)=ConsCenterReal(Q)+j*ConsCenterImag(Q);
-                S(N).q(Q)=testy(N).std;
-            end
-        end
-        x=linspace(NumberOfTrainPoint+2,NumberOfAllPoint+1,NumberOfTestPoint);
-        BetaOfTesting=[];
-        testh1=y(1).value(NumberOfTrainPoint-1:NumberOfAllPoint-2);
-        testh2=y(1).value(NumberOfTrainPoint:NumberOfAllPoint-1);
-        for jj=1:NumberOfTestPoint
-            %IFpart(Rule)
-            j1=1;
-            for number=1:NumberOfPremiseParameters/4
-                termSet{1}(number)={[swarm(gBest).Position(j1:j1+1)]};
-                j1=j1+2;
-            end
-            for number=1:NumberOfPremiseParameters/4
-                termSet{2}(number)={swarm(gBest).Position(j1:j1+1)};
-                j1=j1+2;
-            end
-            for rule=1:length(formationMatrix)
-                r1=gaussmf(testh1(jj),termSet{1}{formationMatrix(rule,1)},1);
-                r2=gaussmf(testh2(jj),termSet{2}{formationMatrix(rule,2)},1);
-                theata1Ofh1=gaussmf(testh1(jj),termSet{1}{formationMatrix(rule,1)},3);
-                theata2Ofh1=gaussmf(testh1(jj),termSet{1}{formationMatrix(rule,1)},2);
-                theata1Ofh2=gaussmf(testh2(jj),termSet{2}{formationMatrix(rule,2)},3);
-                theata2Ofh2=gaussmf(testh2(jj),termSet{2}{formationMatrix(rule,2)},2);               
-                BetaOfTesting(rule,jj)=r1*exp(j*(theata1Ofh1+theata2Ofh1))*r2*exp(j*(theata1Ofh2+theata2Ofh2));
-            end
-        end
-        for K=1:NumberOfPremise
-            BBOfTest(1).k(K).value=BetaOfTesting(K,:);
-        end
 
-        for N=1:1
-            for K=1:NumberOfPremise
-                    for Q=1:NumberOfCons
-                        aocC(N).q(Q)=exp(-(C(N).q(Q)-testy(N).mean)*conj(C(N).q(Q)-testy(N).mean)/(2*testy(N).std*conj(testy(N).std)))  *exp(j*exp(-(C(N).q(Q)-testy(N).mean)*conj(C(N).q(Q)-testy(N).mean)  /(2*testy(N).std*conj(testy(N).std)))* (-(C(N).q(Q)-testy(N).mean)/(testy(N).std*conj(testy(N).std))));
-                        aocS(N).q(Q)=exp(-(S(N).q(Q)*conj(S(N).q(Q)))/(2*testy(N).std*conj(testy(N).std)))*exp(j*exp(-(S(N).q(Q)*conj(S(N).q(Q)))/(2*testy(N).std))  *(-S(N).q(Q)*conj(S(N).q(Q)))/(testy(N).std*conj(testy(N).std)));
-                        f1=exp(-(BBOfTest(N).k(K).value-aocC(N).q(Q)).*conj(BBOfTest(N).k(K).value-aocC(N).q(Q))./(2.*aocS(N).q(Q).*conj(aocS(N).q(Q))));
-                        lambdaOfTest(N).k(K).q(Q).value=f1.*exp(j.*f1.*-(BBOfTest(N).k(K).value-aocC(N).q(Q))./(((aocS(N).q(Q)).*conj((aocS(N).q(Q))))));
-                    end
-            end
-        end
-        %new_yHead(output)
-        for jj=1:NumberOfTestPoint
-            for Q=1:3
-                %CaculateB
-                BOfTestTMP0=[];
-                for N=1:1
-                    TMP0=[];
-                    for K=1:NumberOfPremise
-                        TMP=[BBOfTest(N).k(K).value(jj)];
-                        TMP0=[TMP0 TMP];
-                    end
-                    BOfTestTMP=[TMP0];
-                    BOfTestTMP0=[BOfTestTMP0;BOfTestTMP];
-                end
-                BOfTest=BOfTestTMP0;
-                
-                %CaculateL
-                LOfTestTMP0=[];
-                for K=1:NumberOfPremise
-                    TMP0=[];
-                    for N=1:1
-                        TMP=[lambdaOfTest(N).k(K).q(Q).value(jj)];
-                        TMP0=[TMP0 TMP];
-                    end
-                    LOfTestTMP=[TMP0];
-                    LOfTestTMP0=[LOfTestTMP0;LOfLambdaTMP];
-                end
-                LOfTest=LOfTestTMP0;
-                
-                %CaculateH
-                HOfTestTMP0=[];
-                for N=1:1
-                    TMP0=[1];
-                    TMP=[y(N).value(NumberOfTrainPoint+jj-1) y(N).value(NumberOfTrainPoint+jj)];
-                    TMP0=[TMP0 TMP];
-                    HOfTestTMP=[TMP0];
-                    HOfTestTMP0=[HOfTestTMP0;HOfTestTMP];
-                end
-                HOfTest=HOfTestTMP0;
-                
-                POfTest.q(Q).value(jj,:)=BOfTest*LOfTest*HOfTest;  
-            end
-        end
-        TMP0=[];
-        for Q=1:3
-            TMP=POfTest.q(Q).value;
-            TMP0=[TMP0 TMP];
-        end
-        A=TMP0;
-        output2=A*swarm(gBest).RLSE.theata;
-        
-%         for jj=1:NumberOfTestPoint
-%             TMP1=[];
-%             for k=1:length(formationMatrix)
-%                 TMP=[g(k) g(k)*y(1).value(NumberOfTrainPoint+jj-1) g(k)*y(1).value(NumberOfTrainPoint+jj)];
-%                 TMP1=[TMP1 TMP];
-%             end
-%             A(jj,:)=TMP1;
-%             output2(jj,1)=A(jj,:)*swarm(gBest).RLSE.theata;  %y
-%         end
-        
-        for jj=1:NumberOfTestPoint
-            PSO.test.e(jj)=(y(1).value(jj+NumberOfTrainPoint-1)-output2(jj,1))*conj(y(1).value(jj+NumberOfTrainPoint-1)-output2(jj,1));
-        end
-            PSO.test.rmse=sqrt(sum(PSO.test.e)/(NumberOfTestPoint));
-        plot(x,real(output2),'r--');
-        plot(x,imag(output2),'r--');
-
-toc

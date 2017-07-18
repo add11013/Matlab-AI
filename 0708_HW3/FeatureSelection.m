@@ -113,7 +113,7 @@ function output=FeatureSelection(OriginalData)
     end
 
     %% 定上下界，避免FP選太多或太少
-    Upper=6;
+    Upper=4;
     lower=2;
     %將每個FP裡的特徵貢獻值找出來給FP.p
     for i=1:length(FP.index)
