@@ -1,54 +1,66 @@
-function output=FeatureSelection(OriginalData)
-%get feature
-    datapdiff
+function [output,DataMatrix]=FeatureSelection(OriginalData)
+%% IIM
+% get feature
+    datadiff
 
-    %%Get ALL Feature
-    %AllFeature=[ ];
-    % for i=1:NumberOfTarget
-    %     TMP=data(i).value(:,1:Updown-1);
-    %     AllFeature=[AllFeature TMP];
-    % end
-    % for i=1:NumberOfTarget
-    %     IIMData(i).value=[AllFeature data(i).value(:,Updown)];
-    % end
-    % 
-    %  for i=1:NumberOfTarget
-    %      IIM(i).value=CaculateIIM(IIMData(i).value);
-    %  end
-
-    load('IIM')
-    %% 計算 gain
-    % 找出第一個被選入Selected Pool(SP)的feature
-    for jj=1:NumberOfTarget
-        IIMmax=-100;
-        %最後一行就是目標所在的行數
-        ColOfTarget=length(IIM(jj).value);
-        %-1是因為不用算到目標
-        for i=1:length(IIM(jj).value)-1
-            if IIM(jj).value(i,ColOfTarget)>IIMmax
-                IIMmax=IIM(jj).value(i,ColOfTarget);
-                SP(jj).value(1)=i;
-            end
-        end
+    NumberOfTrainPoint=200;
+    NumberOfTestPoint=61;
+    
+    %combine Feature(no target)
+    AllFeature=[ ];
+    for i=1:NumberOfTarget
+        TMP=data(i).value(:,1:ColOfTarget-1);
+        AllFeature=[AllFeature TMP];
+    end
+    %caculate data matrix
+    DataMatrix=AllFeature;
+    for i=1:NumberOfTarget
+        temp=data(i).value(:,ColOfTarget);
+        DataMatrix=[DataMatrix temp];
+    end
+    
+    %combine the target
+    for i=1:NumberOfTarget
+        AllData(i).value=[AllFeature data(i).value(:,ColOfTarget)];
     end
 
+    %define training and testing data
+    for i=1:NumberOfTarget
+        TrainData(i).value=AllData(i).value(1:NumberOfTrainPoint,:);
+        TestData(i).value=AllData(i).value(NumberOfTrainPoint:size(DataMatrix,1),:);
+    end
+    
+%     %caculate all IIM for feature selection
+%      for i=1:NumberOfTarget
+%          IIM(i).value=CaculateIIM(TrainData(i).value);
+%      end
+    load('IIM')
+    
+    %% 計算 gain
+%初始化SP
+for j=1:NumberOfTarget
+    SP(j).value(1)=0;
+end
     %找出gain大於0的特徵變數
     for j=1:NumberOfTarget
         NumberOfSP=1;
         %-1是因為不用算到目標
-        for i=1:length(IIM(jj).value)-1
-            %算目前在SP裡每個特徵造成的冗餘資訊量
+        for i=1:length(IIM(j).value)-1
+            
+            %如果裡面有東西，就算目前在SP裡每個特徵造成的冗餘資訊量
             Redundancy=0;
-            for ii=1:length(SP(j).value)
-                InformationFiTOFii=IIM(j).value(i,SP(j).value(ii));
-                InformationFiiTOFi=IIM(j).value(SP(j).value(ii),i);
-                Redundancy=Redundancy+(InformationFiTOFii+InformationFiiTOFi)/2;
+            if SP(j).value(1)~=0
+                for ii=1:length(SP(j).value)
+                    InformationFiTOFii=IIM(j).value(i,SP(j).value(ii));
+                    InformationFiiTOFi=IIM(j).value(SP(j).value(ii),i);
+                    Redundancy=Redundancy+(InformationFiTOFii+InformationFiiTOFi)/2;
+                end
             end
             %第i個特徵對第j個目標的資訊量
-            InformationFiTOTj=IIM(j).value(i,ColOfTarget);
+            InformationFiTOTj=IIM(j).value(i,size(IIM(j).value,2));
             %第i個特徵對第j個目標的增益資訊量(gain)
             gain=InformationFiTOTj-Redundancy;
-            if gain>=0
+            if gain>0
                 SP(j).gain(NumberOfSP)=gain;
                 SP(j).value(NumberOfSP)=i;
                 NumberOfSP=NumberOfSP+1;

@@ -3,39 +3,19 @@ close all;
 clc
 tic
 OriginalData=xlsread('Data_set.csv');
-FeatureIndex=FeatureSelection(OriginalData);
+[FeatureIndex DataMatrix]=FeatureSelection(OriginalData);
 %% get  Training data
 %NumberOfTarget指的是實數型態的目標個數
 NumberOfTarget=size(OriginalData,2);
-for t=1:NumberOfTarget
-    tsmc=OriginalData(:,t);
-    LengthOfData=length(tsmc);
-    Updown=31;
-    for jj=1:Updown-1
-        k=jj;
-        for i=1:LengthOfData-Updown
-            TMP(i,jj)=tsmc(k);
-            k=k+1;
-        end
-    end
-    data(t).value=TMP;
-end
-
-AllData=[ ];
-%data.value最後一行是目標不用取，所以取1:Updown-1
-for t=1:NumberOfTarget
-    TMP=data(t).value(:,1:Updown-1);
-    AllData=[AllData TMP];
-end
-
+NumberOfTrainPoint=200;
 %get h1~hM
 for M=1:length(FeatureIndex)
-    h(M).value=AllData(:,FeatureIndex(M));
+    h(M).value=DataMatrix(1:NumberOfTrainPoint,FeatureIndex(M));
     % substractive clustering for premise fuzzysets
     h(M).center=subclust(h(M).value,0.3);
     h(M).std=std(h(M).value);
 end
-NumberOfTrainPoint=length(h(1).value);
+
 figure(1)
 hold on
 %% prepare target
@@ -44,14 +24,16 @@ NumberOfINPUT=length(h);
 NumberOfOUTPUT=NumberOfTarget/2;
 k=1;
 for N=1:NumberOfOUTPUT
-    realPart=OriginalData(Updown+1:length(OriginalData),k);
-    imgPart=OriginalData(Updown+1:length(OriginalData),k+1);
+    realPart=OriginalData(32:length(OriginalData),k);
+    imagPart=OriginalData(32:length(OriginalData),k+1);
     x=linspace(1,length(realPart),length(realPart));
     plot(x,realPart);
-    plot(x,imgPart);
+    plot(x,imagPart);
     k=k+2;
     
-    y(N).value=realPart+imgPart*j;
+    realPartOfTrain=realPart(1:NumberOfTrainPoint);
+    imagPartOfTrain=imagPart(1:NumberOfTrainPoint);
+    y(N).value=realPart+imagPart*j;
 end
 
 
@@ -194,15 +176,6 @@ for ite=1:PSO.iterations
                 end
             end
 
-%             for rule=1:length(formationMatrix)
-%                 r1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},1);
-%                 r2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},1);
-%                 theata1Ofh1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},3);
-%                 theata2Ofh1=gaussmf(h1(jj),termSet{1}{formationMatrix(rule,1)},6);
-%                 theata1Ofh2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},3);
-%                 theata2Ofh2=gaussmf(h2(jj),termSet{2}{formationMatrix(rule,2)},6);               
-%                 Iteration(ite).beta(rule,jj)=r1*exp(j*(theata1Ofh1+theata2Ofh1))*r2*exp(j*(theata1Ofh2+theata2Ofh2));
-%             end
             for rule=1:length(formationMatrix)
                 membership=1;
                 for M=1:NumberOfINPUT
@@ -300,21 +273,7 @@ for ite=1:PSO.iterations
                 end
             end
         end
-        
-        %bbb  98*12
-%         p=eye(9)
-%         p_0=1e7*p;
-%         q_0=zeros(9,1);
-%         for k=1:row
-%             if(k==1)
-%                 RLSE(k).p=p_0-(p_0*bbb(k,:)'*bbb(k,:)*p_0)/(1+bbb(k,:)*p_0*bbb(k,:)'');
-%                 RLSE(k).q=q_0+RLSE(k).p*bbb(k,:)'*(OutputMatrix(k,1)-bbb(k,:)*q_0);
-%             else
-%                 RLSE(k).p=RLSE(k-1).p-(RLSE(k-1).p*bbb(k,:)'*bbb(k,:)*RLSE(k-1).p)/(1+bbb(k,:)*RLSE(k-1).p*bbb(k,:)');
-%                 RSLE(k).q=RLSE(k-1).q+RLSE(k).p*bbb(k,:)'*(OutputMatrix(k,1)-bbb(k,:)*RLSE(k-1).q);
-%             end
-%         end
-%         
+          
       %new_yHead(output)
       for N=1:NumberOfOUTPUT
         for jj=1:NumberOfTrainPoint

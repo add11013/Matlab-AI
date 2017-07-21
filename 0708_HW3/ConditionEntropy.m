@@ -15,9 +15,9 @@ function [h_y,h_yOfX] = ConditionEntropy(data,f1,f2,NorP)
          for i=1:c
              yOfxP(i,1)=data(xP_yIndex(i),f2);
          end
-         [r,y_pdf]=getPdf(data(:,f2));
-         [ry,yOfxP_pdf]=getPdf(yOfxP);
-         [rx,xP_pdf]=getPdf(xP);
+         [r,y_pdf,range]=getPdf(data(:,f2));
+         [ry,yOfxP_pdf,range]=getPdf(yOfxP);
+         [rx,xP_pdf,range]=getPdf(xP);
          %phi=max(max(xP_pdf,yOfxP_pdf)+1e-300,1);
          a=[y_pdf,yOfxP_pdf];
          phi=max(max(a),1)+1e-300;
@@ -39,9 +39,9 @@ function [h_y,h_yOfX] = ConditionEntropy(data,f1,f2,NorP)
          for ii=1:c
              yOfxN(ii,1)=data(xN_yIndex(ii),f2);
          end
-             [r ,y_pdf]=getPdf(data(:,f2));
-             [ry,yOfxN_pdf]=getPdf(yOfxN);
-             [rx, xN_pdf]=getPdf(xN);
+             [r ,y_pdf,range]=getPdf(data(:,f2));
+             [ry,yOfxN_pdf,range]=getPdf(yOfxN);
+             [rx, xN_pdf,range]=getPdf(xN);
              a=[y_pdf,yOfxN_pdf];
              phi=max(max(a),1)+1e-300;
              h_yOfX=sum(xN_pdf.*sum(yOfxN_pdf.*log((phi)./yOfxN_pdf))).*ry.*rx;
