@@ -66,7 +66,7 @@ end
                     InformationFiiTOFi=IIM(j).value(SP(j).value(ii),i);
                     Redundancy=Redundancy+(InformationFiTOFii+InformationFiiTOFi);
                 end
-                Redundancy=Redundancy/length(SP(j).value);
+                Redundancy=Redundancy/(length(SP(j).value)*2);
             end
             %第i個特徵對第j個目標的資訊量
             InformationFiTOTj=IIM(j).value(i,size(IIM(j).value,2));

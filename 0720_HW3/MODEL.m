@@ -366,3 +366,14 @@ end
         legend('IBM','TSMC','OUTPUT1-real','OUTPUT1-imag')
         toc
 save('result');
+%% get  Testing data
+%NumberOfTarget指的是實數型態的目標個數
+NumberOfTarget=size(OriginalData,2);
+NumberOfTrainPoint=200;
+%get h1~hM
+for M=1:length(FeatureIndex)
+    h(M).value=DataMatrix(1:NumberOfTrainPoint,FeatureIndex(M));
+    % substractive clustering for premise fuzzysets
+    h(M).center=subclust(h(M).value,0.2);
+    h(M).std=std(h(M).value);
+end
